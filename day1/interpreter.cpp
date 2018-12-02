@@ -1,6 +1,6 @@
 #include "interpreter.h"
 
-void Interpreter::get_next_token()
+Token Interpreter::get_next_token()
 {
 	std::string text(text);
 
@@ -24,7 +24,7 @@ void Interpreter::get_next_token()
 }
 void Interpreter::error()
 {
-	fprintf(stderr, "%s", "Error parsing input");
+	fprintf(stderr, "%s", "Error parsing input\n");
 }
 void Interpreter::eat(const std::string &token_type)
 {
@@ -33,7 +33,7 @@ void Interpreter::eat(const std::string &token_type)
 	else
 		error();
 }
-void Interpreter::expr()
+int Interpreter::expr()
 {
 	// set current token to the first token taken from the input
 	current_token = get_next_token();
@@ -52,5 +52,5 @@ void Interpreter::expr()
 
 	// after the above call the self.current_token is set to EOF token at this point INTEGER PLUS INTEGER sequence of tokens has been successfully found and the method can just return the result of adding two integers, thus effectively interpreter client input
 	int result = left.value - '0' + right.value - '0';
-	return result
+	return result;
 }

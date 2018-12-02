@@ -9,7 +9,10 @@ class Token
 		char value;
 		void show();
 
-		Token(){}
+		Token(){
+			type = "";
+			value = '\0';
+		}
 		Token(const std::string &_type, const char& _value):
 			type(_type), value(_value){}
 		

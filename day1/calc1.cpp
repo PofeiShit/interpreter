@@ -1,6 +1,5 @@
 #include "interpreter.h"
 
-
 int main()
 {
 	while(1){

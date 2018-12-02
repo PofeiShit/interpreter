@@ -2,6 +2,7 @@
 #define INTERPRETER_H_
 
 #include "token.h"
+#include <stdio.h>
 class Interpreter
 {
 	public:
@@ -12,12 +13,12 @@ class Interpreter
 	public:
 		Interpreter(){}
 		Interpreter(const std::string &_text):text(_text), pos(0){
-			current_token(Token());
+			current_token = Token();
 		}
-		void get_next_token();
+		Token get_next_token();
 		void eat(const std::string &token_type);
-		void expr();	
+		int expr();	
 		void error();
-}
+};
 
 #endif
