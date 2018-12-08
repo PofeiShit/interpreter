@@ -1,10 +1,10 @@
-prom = calc1
-obj = calc1.o interpreter.o token.o
+prom = calc2
+obj = calc2.o interpreter.o token.o
 
 $(prom): $(obj)
 	g++ -o $(prom) $(obj)
-calc1.o: calc1.cpp 
-	g++ -c calc1.cpp
+calc2.o: calc2.cpp 
+	g++ -c calc2.cpp
 interpreter.o: interpreter.cpp
 	g++ -c interpreter.cpp
 token.o: token.cpp
