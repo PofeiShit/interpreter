@@ -83,10 +83,7 @@ int Interpreter::expr()
 		}else if(token.type == MINUS){
 			eat(MINUS);
 			result -= term();
-		}else if(token.type == MUL)
-			eat(MUL);
-		else if(token.type == DIV)
-			eat(DIV);
+		}
 	}
 	return result;
 
