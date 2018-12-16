@@ -15,6 +15,7 @@ class Interpreter
 		void error();
 		int expr();	
 		int factor();
+		int term();
 };
 
 #endif

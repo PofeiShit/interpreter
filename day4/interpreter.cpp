@@ -15,25 +15,40 @@ void Interpreter::error()
 {
 	fprintf(stderr, "Invalid syntax\n");
 }
-int Interpreter::factor()
+int Interpreter::term()
 {
 	Token token = current_token;
 	eat(INTEGER);
 	return atoi(token.value.c_str());
+}
+int Interpreter::factor()
+{
+	long long int result = term();
+	while(current_token.type == MUL || current_token.type == DIV){
+		Token token = current_token;
+		if(token.type == MUL){
+			eat(MUL);
+			result *= term();
+		}else if(token.type == DIV){
+			eat(DIV);
+			result /= term();
+		}
+	}
+	return result; 
 }
 int Interpreter::expr()
 {
 	// set current token to the first token taken from the input
 
 	long long int result = factor();
-	while(current_token.type == MUL || current_token.type == DIV){
+	while(current_token.type == PLUS || current_token.type == MINUS){
 		Token token = current_token;
-		if(token.type == MUL){
-			eat(MUL);
-			result *= factor();
-		}else if(token.type == DIV){
-			eat(DIV);
-			result /= factor();
+		if(token.type == PLUS){
+			eat(PLUS);
+			result += factor();
+		}else if(token.type == MINUS){
+			eat(MINUS);
+			result -= factor();
 		}
 	}
 	return result;

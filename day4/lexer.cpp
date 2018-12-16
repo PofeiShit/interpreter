@@ -1,6 +1,13 @@
 #include "lexer.h"
 
-
+void Lexer::advance()
+{
+	pos++;
+	if(pos > text.length() - 1)
+		current_char = None;
+	else
+		current_char = text[pos];
+}
 void Lexer::skip_whitespace()
 {
 	while(current_char != None && current_char == ' ')
@@ -48,12 +55,4 @@ Token Lexer::get_next_token()
 void Lexer::error()
 {
 	fprintf(stderr, "%s", "Invalid character\n");
-}
-void Lexer::advance()
-{
-	pos++;
-	if(pos > text.length() - 1)
-		current_char = None;
-	else
-		current_char = text[pos];
 }
