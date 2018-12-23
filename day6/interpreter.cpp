@@ -17,18 +17,18 @@ void Interpreter::error()
 }
 int Interpreter::factor()
 {
-	long long int res = 0;
 	Token token = current_token;
 	if(token.type == INTEGER){
 			eat(INTEGER);
 			return atoi(token.value.c_str());
 	}
-	while(current_token.type == LPAREN)
-			eat(LPAREN);
-	res = expr();
-	if(current_token.type == RPAREN)
+	else if(current_token.type == LPAREN){
+		eat(LPAREN);
+		long long int res = expr();
+		if(current_token.type == RPAREN)
 			eat(RPAREN);
-	return res;
+		return res;
+	}
 }
 int Interpreter::term()
 {
