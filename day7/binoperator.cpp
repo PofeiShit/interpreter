@@ -1,11 +1,11 @@
 #include "binoperator.h"
 
-BinOp::BinOp(AST* node){
-		token = ((BinOp*)node)->token;
-		left = ((BinOp*)node)->left;
-		right = ((BinOp*)node)->right;
+BinOp::BinOp(BinOp* node){
+		token = node->token;
+		left = node->left;
+		right = node->right;
 }
-BinOp::BinOp(AST* left, Token _operator, AST* right):token(_operator), left(left), right(right)
+BinOp::BinOp(BinOp* left, Token _operator, BinOp* right):token(_operator), left(left), right(right)
 {
 
 }

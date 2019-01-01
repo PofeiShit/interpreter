@@ -15,25 +15,24 @@ void Parser::error()
 {
 	fprintf(stderr, "Warning Invalid input\n");
 }
-AST* Parser::factor()
+BinOp* Parser::factor()
 {
 	Token token = current_token;
 	if(token.type == INTEGER){
 			eat(INTEGER);
-			AST* ast = new Num(token);
-			return ast;
+			return new BinOp(NULL, token, NULL); // number  
 	}
 	else if(token.type == LPAREN){
 		eat(LPAREN);
-		AST* ast = new BinOp(expr());
+		BinOp* ast = expr();
 		eat(RPAREN);
 		return ast;
 	}
 }
-AST* Parser::term()
+BinOp* Parser::term()
 {
-	AST* ast = new BinOp(factor());
-	AST* node;
+	BinOp* ast = factor();
+	BinOp* node;
 	while(current_token.type == MUL || current_token.type == DIV){
 		Token token = current_token;
 		if(token.type == MUL){
@@ -41,17 +40,16 @@ AST* Parser::term()
 		}else if(token.type == DIV){
 			eat(DIV);
 		}
-		AST* right = new BinOp(factor());
-		node = new BinOp(ast, token, right);
+		node = new BinOp(ast, token, factor());
 	}
 	return node; 
 }
-AST* Parser::expr()
+BinOp* Parser::expr()
 {
 	// set current token to the first token taken from the input
 
-	AST* ast = new BinOp(term());
-	AST* node;
+	BinOp* ast = term();
+	BinOp* node;
 	while(current_token.type == PLUS || current_token.type == MINUS){
 		Token token = current_token;
 		if(token.type == PLUS){
@@ -59,14 +57,12 @@ AST* Parser::expr()
 		}else if(token.type == MINUS){
 			eat(MINUS);
 		}
-		AST* right = new BinOp(factor());
-		node = new BinOp(ast, token, right);
+		node = new BinOp(ast, token, factor());
 	}
 	return node;
 }
-AST* Parser::parser()
+BinOp* Parser::parser()
 {
-	AST* node = expr();
-	std::cout << node << std::endl;
+	BinOp* node = expr();
 	return node;
 }

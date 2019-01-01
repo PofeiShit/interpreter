@@ -1,16 +1,15 @@
 #ifndef BINOPERATOR_H_
 #define BINOPERATRO_H_
-#include "ast.h"
-
-class BinOp : public AST
+#include "token.h"
+class BinOp 
 {
 	public:
 			Token token;
-			AST* left;
-			AST* right;
+			BinOp* left;
+			BinOp* right;
 	public:
-			BinOp(AST* node);
-			BinOp(AST* left, Token _operator, AST* right);
+			BinOp(BinOp* node);
+			BinOp(BinOp* left, Token _operator, BinOp* right);
 			~BinOp();
 
 };

@@ -3,7 +3,6 @@
 #include "token.h"
 #include "lexer.h"
 #include "binoperator.h"
-#include "num.h"
 class Parser 
 {
 	public:
@@ -15,10 +14,10 @@ class Parser
 		Parser(const Lexer _lexer);
 		void eat(const std::string &token_type);
 		void error();
-		AST* expr();	
-		AST* factor();
-		AST* term();
-		AST* parser();
+		BinOp* expr();	
+		BinOp* factor();
+		BinOp* term();
+		BinOp* parser();
 };
 
 #endif

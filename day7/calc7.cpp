@@ -8,7 +8,7 @@ int main()
 		getline(std::cin, input);
 		Lexer lexer(input);
 		Parser parser(lexer);
-		AST* node = parser.parser();
+		BinOp* node = parser.parser();
 	}
 	return 0;
 }
