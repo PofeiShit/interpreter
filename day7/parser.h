@@ -18,6 +18,7 @@ class Parser
 		BinOp* factor();
 		BinOp* term();
 		BinOp* parser();
+		void showTree(BinOp* node);
 };
 
 #endif

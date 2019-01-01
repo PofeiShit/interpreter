@@ -1,4 +1,7 @@
 #include "parser.h"
+Parser::Parser()
+{
+}
 Parser::Parser(const Lexer _lexer)
 {
 	lexer = _lexer;
@@ -31,8 +34,7 @@ BinOp* Parser::factor()
 }
 BinOp* Parser::term()
 {
-	BinOp* ast = factor();
-	BinOp* node;
+	BinOp* node = factor();
 	while(current_token.type == MUL || current_token.type == DIV){
 		Token token = current_token;
 		if(token.type == MUL){
@@ -40,7 +42,8 @@ BinOp* Parser::term()
 		}else if(token.type == DIV){
 			eat(DIV);
 		}
-		node = new BinOp(ast, token, factor());
+		BinOp* newNode = new BinOp(node, token, factor());
+		node = newNode;
 	}
 	return node; 
 }
@@ -49,7 +52,7 @@ BinOp* Parser::expr()
 	// set current token to the first token taken from the input
 
 	BinOp* ast = term();
-	BinOp* node;
+	BinOp* node = new BinOp(ast); 
 	while(current_token.type == PLUS || current_token.type == MINUS){
 		Token token = current_token;
 		if(token.type == PLUS){
@@ -57,12 +60,22 @@ BinOp* Parser::expr()
 		}else if(token.type == MINUS){
 			eat(MINUS);
 		}
-		node = new BinOp(ast, token, factor());
+		BinOp* newNode = new BinOp(node, token, term());
+		node = newNode;
 	}
 	return node;
+}
+void Parser::showTree(BinOp* node)
+{
+	if(node != NULL){
+		node->token.show();
+		showTree(node->left);
+		showTree(node->right);
+	}	
 }
 BinOp* Parser::parser()
 {
 	BinOp* node = expr();
+//	showTree(node);
 	return node;
 }
