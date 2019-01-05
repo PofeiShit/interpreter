@@ -11,7 +11,6 @@ class Interpreter
 		Interpreter(const Parser parser);
 		~Interpreter();
 
-		int visitBinOp(BinOp* node);
 		int interpret();
 };
 #endif

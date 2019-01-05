@@ -2,7 +2,7 @@
 #define PARSER_H_
 #include "token.h"
 #include "lexer.h"
-#include "binoperator.h"
+#include "ast.h"
 class Parser 
 {
 	public:
@@ -14,11 +14,11 @@ class Parser
 		Parser(const Lexer _lexer);
 		void eat(const std::string &token_type);
 		void error();
-		BinOp* expr();	
-		BinOp* factor();
-		BinOp* term();
-		BinOp* parser();
-		void showTree(BinOp* node);
+		AST* expr();	
+		AST* factor();
+		AST* term();
+		AST* parser();
+		void showTree(AST* node);
 };
 
 #endif
