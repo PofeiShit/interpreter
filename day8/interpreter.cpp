@@ -43,17 +43,18 @@ int Interpreter::visit(Num *node)
 int Interpreter::visit(UnaryOperator *node)
 {
 		int value = 0;
-		AST* n = node->left;
-		if(n->getType() == BINOP)
-				value = visit(static_cast<BinOp*>(n));
-		else if(n->getType() == NUM)
-				value = visit(static_cast<Num*>(n));
-		else if(n->getType() == UNARY)
-				value = visit(static_cast<UnaryOperator*>(n));
+		AST* father = (AST*)node;
+		AST* son = father->left;
+		if(son->getType() == BINOP)
+				value = visit(static_cast<BinOp*>(son));
+		else if(son->getType() == NUM)
+				value = visit(static_cast<Num*>(son));
+		else if(son->getType() == UNARY)
+				value = visit(static_cast<UnaryOperator*>(son));
 
-		if(n->token.type == PLUS)
+		if(father->token.type == PLUS)
 				return value;
-		else if(n->token.type == MINUS)
+		else if(father->token.type == MINUS)
 				return -value;
 }
 int Interpreter::interpret()
@@ -63,4 +64,6 @@ int Interpreter::interpret()
 				return visit(static_cast<BinOp*>(tree)); 
 		else if(tree->getType() == NUM)
 				return visit(static_cast<Num*>(tree)); 
+		else if(tree->getType() == UNARY)
+				return visit(static_cast<UnaryOperator*>(tree));
 }

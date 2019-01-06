@@ -1,10 +1,10 @@
-prom = calc7
-obj = calc7.o token.o lexer.o ast.o parser.o interpreter.o
+prom = calc8
+obj = calc8.o token.o lexer.o ast.o parser.o interpreter.o
 
 $(prom): $(obj)
 	g++ -o $(prom) $(obj)
-calc7.o: calc7.cpp 
-	g++ -c calc7.cpp
+calc8.o: calc8.cpp 
+	g++ -c calc8.cpp
 token.o: token.cpp
 	g++ -c token.cpp
 lexer.o: lexer.cpp

@@ -24,13 +24,13 @@ AST* Parser::factor()
 		if(token.type == PLUS){
 			eat(PLUS);
 			AST* t = factor();
-			UnaryOperator* node = new UnaryOperator(t, token, t);
+			UnaryOperator* node = new UnaryOperator(t, token);
 			return static_cast<AST*>(node);
 		}
 		else if(token.type == MINUS){
 			eat(MINUS);
 			AST* t = factor();
-			UnaryOperator* node = new UnaryOperator(t, token, t);
+			UnaryOperator* node = new UnaryOperator(t, token);
 			return static_cast<AST*>(node);
 		}
 		else if(token.type == INTEGER){
@@ -80,13 +80,15 @@ void Parser::showTree(AST* node)
 {
 		if(node != NULL){
 				node->token.show();
-				showTree(node->left);
-				showTree(node->right);
+				if(node->left != NULL)
+					showTree(node->left);
+				if(node->right != NULL)
+					showTree(node->right);
 		}	
 }
 AST* Parser::parser()
 {
 		AST* node = expr();
-		showTree(node);
+//		showTree(node);
 		return node;
 }

@@ -50,11 +50,11 @@ class UnaryOperator : public AST
 {
 		public:
 				UnaryOperator(){}
-				UnaryOperator(AST* left, Token _operator, AST* right)
+				UnaryOperator(AST* node, Token _operator)
 				{
 					this->token = _operator;
-					this->left = left;
-					this->right = right;
+					this->left = node;
+					this->right = NULL;
 				}
 				~UnaryOperator(){}
 				NodeType getType(){
