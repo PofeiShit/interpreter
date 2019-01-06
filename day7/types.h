@@ -4,6 +4,25 @@
 #include <string>
 #include <iostream>
 #include <stdlib.h>
+
+enum NodeType
+{
+	BINOP, NUM
+};
+#if 0
+enum TokenType
+{
+	INTEGER,
+	PLUS,
+	_EOF,
+	MINUS,
+	MUL,
+	DIV,
+	LPAREN,
+	RPAREN,
+	NONE
+};
+#endif
 const std::string INTEGER = "INTEGER";
 const std::string PLUS = "PLUS";
 const std::string EOF_ = "EOF";
