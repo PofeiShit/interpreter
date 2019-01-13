@@ -1,5 +1,4 @@
 #include "interpreter.h"
-
 int main()
 {
 		std::string input = 
@@ -18,10 +17,9 @@ int main()
 		//getline(std::cin, input);
 		Lexer lexer(input);
 		Parser parser(lexer);
-		AST* node = parser.parser();	
 		Interpreter interpreter(parser);
 		interpreter.interpret();
-		for(auto itr = GLOBAL_SCOPE.begin(); itr != GLOBAL_SCOPE.end(); itr++){
+		for(std::map<std::string, int>::iterator itr = interpreter.GLOBAL_SCOPE.begin(); itr != interpreter.GLOBAL_SCOPE.end(); itr++){
 			std::cout << itr->first << ":" << itr->second << std::endl;
 		}
 		return 0;

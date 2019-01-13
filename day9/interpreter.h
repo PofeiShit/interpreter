@@ -1,7 +1,6 @@
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_
 #include "parser.h"
-std::map<std::string, int> GLOBAL_SCOPE;
 class NodeVisitor
 {
 	public:
@@ -18,6 +17,7 @@ class Interpreter : public NodeVisitor
 {
 	public:
 		Parser parser;
+		std::map<std::string, int> GLOBAL_SCOPE;
 
 	public:
 		Interpreter();
