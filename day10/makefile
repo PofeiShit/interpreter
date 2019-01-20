@@ -1,5 +1,5 @@
 prom = calc10
-obj = calc10.o token.o lexer.o ast.o parser.o 
+obj = calc10.o token.o lexer.o ast.o parser.o interpreter.o
 
 $(prom): $(obj)
 	g++ -o $(prom) $(obj)
@@ -13,7 +13,7 @@ ast.o: ast.cpp
 	g++ -c ast.cpp
 parser.o: parser.cpp
 	g++ -c parser.cpp
-#interpreter.o: interpreter.cpp
-#	g++ -c interpreter.cpp
+interpreter.o: interpreter.cpp
+	g++ -c interpreter.cpp
 clean:
 	rm -rf $(obj) $(prom)

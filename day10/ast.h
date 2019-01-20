@@ -14,24 +14,25 @@ class AST
 				virtual NodeType getType() = 0;
 };
 class Num : public AST
-{ public:
+{ 
+		public:
 				Num(){}
 				Num(Token token){
 					this->token = token;
 					this->left = this->right = NULL;
 				
 				}
+				
+				NodeType getType(){
+					return NUM;
+				}
+				~Num(){}
 				int get_ValueI(){
 					return atoi(token.value.c_str());
 				}
 				float get_ValueF(){
 					return atof(token.value.c_str());
 				}
-				NodeType getType(){
-					return NUM;
-				}
-				~Num(){}
-
 };
 class BinOp : public AST
 {
@@ -109,6 +110,7 @@ class Variable : public AST
 				return VARIABLE;
 			}
 			std::string var_name;
+			std::string var_type;
 };
 class NoOperator : public AST
 {

@@ -8,30 +8,31 @@ Interpreter::Interpreter(const Parser& parser):parser(parser)
 Interpreter::~Interpreter()
 {
 }
-int Interpreter::visit(BinOp *node)
+template<typename T>
+T Interpreter::visit(BinOp *node)
 {
 		AST* left = node->left;
 		AST* right = node->right;
-		int l = 0, r = 0;
+		T l, r;
 		NodeType type = left->getType();
 		if(type == BINOP)
-				l = visit(static_cast<BinOp*>(left));
+				l = visit<T>(static_cast<BinOp*>(left));
 		else if(type == NUM)
-				l = visit(static_cast<Num*>(left));
+				l = visit<T>(static_cast<Num*>(left));
 		else if(type == UNARY)
-				l = visit(static_cast<UnaryOperator*>(left));
+				l = visit<T>(static_cast<UnaryOperator*>(left));
 		else if(type == VARIABLE)
-				l = visit(static_cast<Variable*>(left));
+				l = visit<T>(static_cast<Variable*>(left));
 
 		type = right->getType();
 		if(type == BINOP)
-				r = visit(static_cast<BinOp*>(right));
+				r = visit<T>(static_cast<BinOp*>(right));
 		else if(type == NUM)
-				r = visit(static_cast<Num*>(right));
+				r = visit<T>(static_cast<Num*>(right));
 		else if(type == UNARY)
-				r = visit(static_cast<UnaryOperator*>(right));
+				r = visit<T>(static_cast<UnaryOperator*>(right));
 		else if(type == VARIABLE)
-				r = visit(static_cast<Variable*>(right));
+				r = visit<T>(static_cast<Variable*>(right));
 
 		if(node->token.type	== PLUS)
 				return l + r;
@@ -39,27 +40,34 @@ int Interpreter::visit(BinOp *node)
 				return l - r;
 		if(node->token.type	== MUL)
 				return l * r;
-		if(node->token.type	== DIV)
+		if(node->token.type	== INTEGER_DIV)
 				return l / r;
+		if(node->token.type == FLOAT_DIV)
+				return (float)l / (float)r;
 }
-int Interpreter::visit(Num *node)
+template<typename T>
+T Interpreter::visit(Num *node)
 {
-		return node->getValue();
+		if(node->token.type == INTEGER_CONST)
+			return node->get_ValueI();
+		else if(node->token.type == REAL_CONST)
+			return node->get_ValueF();
 }
-int Interpreter::visit(UnaryOperator *node)
+template<typename T>
+T Interpreter::visit(UnaryOperator *node)
 {
-		int value = 0;
+		T value;
 		AST* father = (AST*)node;
 		AST* son = father->left;
 		NodeType type = son->getType();
 		if(type == BINOP)
-				value = visit(static_cast<BinOp*>(son));
+				value = visit<T>(static_cast<BinOp*>(son));
 		else if(type == NUM)
-				value = visit(static_cast<Num*>(son));
+				value = visit<T>(static_cast<Num*>(son));
 		else if(type == UNARY)
-				value = visit(static_cast<UnaryOperator*>(son));
+				value = visit<T>(static_cast<UnaryOperator*>(son));
 		else if(type == VARIABLE)
-				value = visit(static_cast<Variable*>(son));
+				value = visit<T>(static_cast<Variable*>(son));
 
 		if(father->token.type == PLUS)
 				return value;
@@ -84,17 +92,29 @@ void Interpreter::visit(Assign *node)
 	Variable *n = static_cast<Variable*>(node->left);
 	std::string var_name = n->var_name;	
 	NodeType type = node->right->getType();
+	if(n->var_type == INTEGER){	
 	int value;
 	if(type == BINOP)
-		value = visit(static_cast<BinOp*>(node->right));
+		value = visit<int>(static_cast<BinOp*>(node->right));
 	else if(type == NUM)
-		value = visit(static_cast<Num*>(node->right));
+		value = visit<int>(static_cast<Num*>(node->right));
 	else if(type == UNARY)
-		value = visit(static_cast<UnaryOperator*>(node->right));
-
+		value = visit<int>(static_cast<UnaryOperator*>(node->right));
 	GLOBAL_SCOPE[var_name] = value;
+	}
+	else if(n->var_type == REAL){	
+	float value;
+	if(type == BINOP)
+		value = visit<float>(static_cast<BinOp*>(node->right));
+	else if(type == NUM)
+		value = visit<float>(static_cast<Num*>(node->right));
+	else if(type == UNARY)
+		value = visit<float>(static_cast<UnaryOperator*>(node->right));
+	GLOBAL_SCOPE[var_name] = value;
+	}
 }
-int Interpreter::visit(Variable *node)
+template<typename T>
+T Interpreter::visit(Variable *node)
 {
 	std::string var_name = node->var_name;
 	if(GLOBAL_SCOPE.find(var_name) != GLOBAL_SCOPE.end())
@@ -106,29 +126,37 @@ void Interpreter::visit(NoOperator *node)
 {
 	return;
 }
+void Interpreter::visit(Program *node)
+{
+	return visit(static_cast<Block*>(node->left));
+}
+void Interpreter::visit(Block *node)
+{
+	for(int i = 0; i < node->declarations.size(); i++){
+		for(int j  = 0; j < node->declarations[i].size(); j++){
+			visit(static_cast<VarDecl*>(node->declarations[i][j]);
+		}
+	}
+	visit(static_cast<Compound*>(node->left));
+}
+void Interpreter::visit(VarDecl *node)
+{
+	return ;
+}
+void Interpreter::visit(Type *node)
+{
+	return ;
+}
 void Interpreter::error()
 {
 	fprintf(stderr, "invalid node\n");
 }
-int Interpreter::interpret()
+void Interpreter::interpret()
 {
 		AST* tree = parser.parser();
-		NodeType type = tree->getType();
-		if(type == BINOP) 
-				return visit(static_cast<BinOp*>(tree)); 
-		else if(type == NUM)
-				return visit(static_cast<Num*>(tree)); 
-		else if(type == UNARY)
-				return visit(static_cast<UnaryOperator*>(tree));
-		else if(type == COMPOUND)
-				visit(static_cast<Compound*>(tree));
-		else if(type == ASSIGNNODE)
-				visit(static_cast<Assign*>(tree));
-		else if(type == NOOPERATOR)
-				visit(static_cast<NoOperator*>(tree));
-		else if(type == VARIABLE){
+		if(tree == NULL){
 				error();
-				return -1;
+				return;
 		}
-
+		visit(static_cast<Program*>(tree));
 }

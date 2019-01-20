@@ -9,8 +9,6 @@ Parser::Parser(const Lexer _lexer)
 }
 void Parser::eat(const std::string &token_type)
 {
-		current_token.show();
-		std::cout << token_type << std::endl;
 		if(current_token.type == token_type)
 				current_token = lexer.get_next_token();
 		else
@@ -53,8 +51,10 @@ std::vector<AST*> Parser::variable_declaration()
 	eat(COLON);
 	AST* type_node = type_spec();
 	std::vector<AST*> var_declarations;
-	for(int i = 0; i < var_nodes.size(); i++)
+	for(int i = 0; i < var_nodes.size(); i++){
+		var_nodes[i].var_type = type_node->token.type;
 		var_declarations.push_back(static_cast<AST*>(new VarDecl(var_nodes[i], type_node)));
+	}
 	return var_declarations;
 }
 AST* Parser::type_spec()
