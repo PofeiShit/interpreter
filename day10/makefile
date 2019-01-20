@@ -1,0 +1,19 @@
+prom = calc10
+obj = calc10.o token.o lexer.o ast.o parser.o 
+
+$(prom): $(obj)
+	g++ -o $(prom) $(obj)
+calc10.o: calc10.cpp 
+	g++ -c calc10.cpp
+token.o: token.cpp
+	g++ -c token.cpp
+lexer.o: lexer.cpp
+	g++ -c lexer.cpp
+ast.o: ast.cpp
+	g++ -c ast.cpp
+parser.o: parser.cpp
+	g++ -c parser.cpp
+#interpreter.o: interpreter.cpp
+#	g++ -c interpreter.cpp
+clean:
+	rm -rf $(obj) $(prom)
