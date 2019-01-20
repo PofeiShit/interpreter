@@ -1,12 +1,12 @@
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_
 #include "parser.h"
+extern std::map<std::string, std::string> VAR_TYPES;
 class Interpreter
 {
 	public:
 		Parser parser;
-		template<typename T>
-		std::map<std::string, T> GLOBAL_SCOPE;
+		std::map<std::string, std::string> GLOBAL_SCOPE;
 
 	public:
 		Interpreter();

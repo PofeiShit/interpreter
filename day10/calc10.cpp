@@ -1,27 +1,40 @@
 #include "interpreter.h"
 int main()
 {
-		std::string input = 
-				" \
-				PROGRAM Part10AST; \
-				VAR \
-					a, b : INTEGER; \
-					y 	 : REAL; \
-				BEGIN  {Part10AST} \
-				a := 2; \
-				b := 10 * a + 10 * a DIV 4; \
-				y := 20 / 7 + 3.14; \
-				END. {Part10AST} \
-				";
-		//std::cout << "spi> ";
-		//getline(std::cin, input);
-		Lexer lexer(input);
-		Parser parser(lexer);
-		AST* node = parser.parser();
-		Interpreter interpreter(parser);
-		interpreter.interpret();
-		for(std::map<std::string, int>::iterator itr = interpreter.GLOBAL_SCOPE.begin(); itr != interpreter.GLOBAL_SCOPE.end(); itr++){
-			std::cout << itr->first << ":" << itr->second << std::endl;
-		}
-		return 0;
+	std::string input = 
+		" \
+		PROGRAM Part10 \
+		VAR \
+		number     : INTEGER; \
+		a, b, c, x : INTEGER; \
+		y          : REAL; \
+		\
+		BEGIN {Part10} \
+		BEGIN \
+		number := 2; \
+		a := number; \
+		b := 10 * a + 10 * number DIV 4; \
+		c := a - - b; \
+		END; \
+		x := 11; \
+		y := 20 / 7 + 3.14; \
+		{ writeln('a = ', a); } \
+	{ writeln('b = ', b); } \
+	{ writeln('c = ', c); } \
+	{ writeln('number = ', number); } \
+	{ writeln('x = ', x); } \
+	{ writeln('y = ', y); } \
+	END.  {Part10} \
+		";
+	std::cout << input << std::endl;
+	//std::cout << "spi> ";
+	//getline(std::cin, input);
+	Lexer lexer(input);
+	Parser parser(lexer);
+	Interpreter interpreter(parser);
+	interpreter.interpret();
+	for(std::map<std::string, std::string>::iterator itr = interpreter.GLOBAL_SCOPE.begin(); itr != interpreter.GLOBAL_SCOPE.end(); itr++){
+		std::cout << itr->first << ":" << itr->second << std::endl;
+	}
+	return 0;
 }

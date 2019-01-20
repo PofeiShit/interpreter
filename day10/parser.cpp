@@ -1,4 +1,5 @@
 #include "parser.h"
+std::map<std::string, std::string> VAR_TYPES;
 Parser::Parser()
 {
 }
@@ -52,7 +53,8 @@ std::vector<AST*> Parser::variable_declaration()
 	AST* type_node = type_spec();
 	std::vector<AST*> var_declarations;
 	for(int i = 0; i < var_nodes.size(); i++){
-		var_nodes[i].var_type = type_node->token.type;
+		Variable* t = static_cast<Variable*>(var_nodes[i]);
+		VAR_TYPES[t->token.value] = type_node->token.type;
 		var_declarations.push_back(static_cast<AST*>(new VarDecl(var_nodes[i], type_node)));
 	}
 	return var_declarations;
@@ -229,6 +231,6 @@ AST* Parser::parser()
 		if(current_token.type != EOF_)
 				error();
 		
-		//showTree(node);
+		showTree(node);
 		return node;
 }

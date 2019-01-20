@@ -3,6 +3,8 @@
 #include "token.h"
 #include "lexer.h"
 #include "ast.h"
+
+extern std::map<std::string, std::string> VAR_TYPES;
 class Parser 
 {
 	public:

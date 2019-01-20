@@ -71,7 +71,7 @@ class Compound : public AST
 		std::vector<AST*> children;
 		Compound()
 		{
-			this->token = Token(EOF_, "");
+			this->token = Token(EOF_, "COMPOUND");
 			this->left = NULL;
 			this->right = NULL;
 		}
@@ -110,7 +110,6 @@ class Variable : public AST
 				return VARIABLE;
 			}
 			std::string var_name;
-			std::string var_type;
 };
 class NoOperator : public AST
 {
@@ -119,7 +118,7 @@ class NoOperator : public AST
 			{
 				this->left = NULL;
 				this->right = NULL;
-				this->token = Token(EOF_, "");
+				this->token = Token(EOF_, "NOOPEARTOR");
 			}
 			NodeType getType(){
 				return NOOPERATOR;
@@ -131,7 +130,7 @@ class Program : public AST
 			Program(){}
 			Program(std::string name, AST* left){
 				this->name = name;
-				this->token = Token(EOF_, "");
+				this->token = Token(EOF_, "PROGRAM");
 				this->left = left;
 				this->right = NULL;
 			}
@@ -146,7 +145,7 @@ class Block : public AST
 			Block(){}
 			Block(AST* compound_statement){
 				this->left = compound_statement;
-				this->token = Token(EOF_, "");
+				this->token = Token(EOF_, "BLOCK");
 				this->right = NULL;
 			}
 			NodeType getType(){
@@ -162,7 +161,7 @@ class VarDecl : public AST
 			{
 				this->left = var_node;
 				this->right = type_node;
-				this->token = Token(EOF_, "");
+				this->token = Token(EOF_, "VARDECL");
 			}
 			NodeType getType(){
 				return VARDECL;
