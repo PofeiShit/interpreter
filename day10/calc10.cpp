@@ -3,7 +3,7 @@ int main()
 {
 	std::string input = 
 		" \
-		PROGRAM Part10 \
+		PROGRAM Part10; \
 		VAR \
 		number     : INTEGER; \
 		a, b, c, x : INTEGER; \
@@ -13,7 +13,7 @@ int main()
 		BEGIN \
 		number := 2; \
 		a := number; \
-		b := 10 * a + 10 * number DIV 4; \
+		b := 10 * a + 10 * number DIV 6; \
 		c := a - - b; \
 		END; \
 		x := 11; \
@@ -26,7 +26,6 @@ int main()
 	{ writeln('y = ', y); } \
 	END.  {Part10} \
 		";
-	std::cout << input << std::endl;
 	//std::cout << "spi> ";
 	//getline(std::cin, input);
 	Lexer lexer(input);
