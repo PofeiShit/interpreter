@@ -18,10 +18,10 @@ void SymbolTableBuilder::visit(VarDecl* node)
 {
 	AST* type_node = node->right;	
 	std::string type_name = type_node->token.value;	
-	Symbol* symbol_type = symbol_table->lookUp[type_name]; 
+	Symbol* symbol_type = symbol_table.lookUp(type_name); 
 	AST* var_node = node->left;
 	std::string var_name = var_node->token.value;
-	VarSymbol* var_symbol = VarSymbol(var_name, symbol_type);
+	VarSymbol* var_symbol = new VarSymbol(var_name, type_name);
 	symbol_table.define(static_cast<Symbol*>(var_symbol));
 }
 void SymbolTableBuilder::visit(Compound* node)
@@ -44,7 +44,7 @@ void SymbolTableBuilder::visit(BinOp *node)
 {
 	AST* left = node->left;
 	AST* right = node->right;
-	NodeType type == left->getType();
+	NodeType type = left->getType();
 	if(type == BINOP)
 		visit(static_cast<BinOp*>(left));
 	else if(type == NUM)
@@ -83,13 +83,17 @@ void SymbolTableBuilder::visit(UnaryOperator* node)
 		visit(static_cast<Variable*>(son));
 
 }
+void SymbolTableBuilder::visit(Type *node)
+{
+	return ;
+}
 void SymbolTableBuilder::visit(Assign* node)
 {
 	AST* var_node = node->left;	
 	std::string var_name = var_node->token.value;
-	Symbol* var_symbol = symbol_table->lookUp(var_name);
+	Symbol* var_symbol = symbol_table.lookUp(var_name);
 	if(var_symbol == NULL){
-		fprintf(stderr, "错误的标识符:%s", var_name);
+		fprintf(stderr, "错误的标识符:%s", var_name.c_str());
 	}
 
 	NodeType type = node->right->getType();
@@ -103,8 +107,8 @@ void SymbolTableBuilder::visit(Assign* node)
 void SymbolTableBuilder::visit(Variable *node)
 {
 	std::string var_name = node->var_name;	
-	Symbol* var_symbol = symbol_table->lookUp(var_name);
+	Symbol* var_symbol = symbol_table.lookUp(var_name);
 	if(var_symbol == NULL){
-		fprintf(stderr, "错误的标识符:%s", var_name);
+		fprintf(stderr, "错误的标识符:%s", var_name.c_str());
 	}
 }

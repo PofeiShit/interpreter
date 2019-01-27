@@ -6,24 +6,21 @@ int main()
 		" \
 		PROGRAM Part11; \
 		VAR \
-			number : INTEGER; \
-			a, b   : INTEGER; \
-			y      : REAL; \
-		BEGIN {Part11} \
-			number := 2; \
-			a := number; \
-			b := 10 * a + 10 * number DIV 4; \
-			y := 20 / 7 + 3.14; \
-		END.  {Part10} \
+			x, y : INTEGER; \
+		BEGIN \
+			x := 2; \
+			y := 3 + x; \
+		END. \
 		";
 	//std::cout << "spi> ";
 	//getline(std::cin, input);
 	Lexer lexer(input);
 	Parser parser(lexer);
 	AST* tree = parser.parser();
-	symtab_builder = SymbolTableBuilder();	
-	symtab_builder.visit(tree);
-	std::cout << "符号表中的内容" << symtab_builder.symbol_table << std::endl;
+	SymbolTableBuilder symtab_builder;	
+	symtab_builder.visit(static_cast<Program*>(tree));
+	std::cout << "符号表中的内容:\n";  
+	symtab_builder.symbol_table.showSymbol();
 	std::cout << "--------------------------" << std::endl;
 	std::cout << "开始解释代码..." << std::endl;
 	Interpreter interpreter(tree);

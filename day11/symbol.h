@@ -14,8 +14,10 @@ class Symbol
 class BuiltinTypeSymbol : public Symbol
 {
 	public:
-			BuiltinTypeSymbol(std::string _name):name(_name), symbol_type(""){}
-			
+			BuiltinTypeSymbol(std::string _name){
+				this->name = _name;
+			    this->symbol_type = "None";
+			}	
 			std::string getName(){
 				return name;
 			}
@@ -23,10 +25,13 @@ class BuiltinTypeSymbol : public Symbol
 class VarSymbol : public Symbol
 {
 	public:
-			VarSymbol(std::string _name, std::string _type):name(_name), symbol_type(_type){}
+			VarSymbol(std::string _name, std::string _type){
+				this->name = _name;
+				this->symbol_type = _type;
+			}
 			
 			std::string getName(){
-				return name + ":" + _type;
+				return name + ":" + symbol_type;
 			}
 };
 class SymbolTable
@@ -39,26 +44,33 @@ class SymbolTable
 			}
 
 	public:
-			void intit_builtins()
+			void init_builtins()
 			{
-				define(static_cast<Symbol*>(BuiltinTypeSymbol("INTEGER")));
-				define(static_cast<Symbol*>(BuiltinTypeSymbol("REAL")));
+				define(static_cast<Symbol*>(new BuiltinTypeSymbol("INTEGER")));
+				define(static_cast<Symbol*>(new BuiltinTypeSymbol("REAL")));
 			}
-			void printSymbol(){
-				
+			void showSymbol()
+			{
+				std::cout << "Symbols:[";
+				for(auto itr = _symbols.begin(); itr != _symbols.end(); itr++){
+				std::cout << "<" << itr->first << ':' << itr->second->symbol_type << ">," ;
+				}
+				std::cout << "]\n";
 			}
-			void define(const Symbol* symbol){
-				std::cout << "define : " << symbol->name << std::endl;
+			void define(Symbol* symbol){
+				std::cout << __FILE__ << __LINE__ << " define : " << symbol->name << ':' << symbol->symbol_type << std::endl;
 				_symbols[symbol->name] = symbol;
 			}
-			Symbols* lookUp(std::string _name){
-				std::cout << "look up : " << _name << std::endl;
-				if(_symbols.find(_name) != _symbols.end())
+			Symbol* lookUp(std::string _name){
+				std::cout << __FILE__ << __LINE__ << " look up : " << _name << std::endl;
+				if(_symbols.find(_name) != _symbols.end()){
 					return _symbols[_name];
+				}
 				else 
 					return NULL;
 			}
 };
+class NodeVisitor;
 class SymbolTableBuilder : public NodeVisitor
 {
 	public:
@@ -73,9 +85,8 @@ class SymbolTableBuilder : public NodeVisitor
 		void visit(Block *node);
 		void visit(VarDecl *node);
 		void visit(Type *node);
-
 	public:
-		Symbol *symbol_table;
+		SymbolTable symbol_table;
 
 };
 #endif

@@ -16,6 +16,6 @@ parser.o: parser.cpp
 interpreter.o: interpreter.cpp
 	g++ -c -std=c++11 interpreter.cpp
 symbol.o: symbol.cpp
-	g++ -c symbol.cpp
+	g++ -c -std=c++11 symbol.cpp
 clean:
 	rm -rf $(obj) $(prom)

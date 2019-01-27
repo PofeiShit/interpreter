@@ -5,7 +5,7 @@ Interpreter::Interpreter(){
 Interpreter::Interpreter(const Parser& parser):parser(parser), tree(NULL)
 {
 }
-Interpreter::Interpreter(const AST* _tree):tree(_tree){}
+Interpreter::Interpreter(AST* _tree):tree(_tree){}
 Interpreter::~Interpreter()
 {
 }

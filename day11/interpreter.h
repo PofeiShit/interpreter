@@ -24,7 +24,7 @@ class Interpreter : public NodeVisitor
 	public:
 		Interpreter();
 		Interpreter(const Parser &parser);
-		Interpreter(const AST* tree);
+		Interpreter(AST* tree);
 		~Interpreter();
 		template<typename T> T visit(Num *node);
 		template<typename T> T visit(BinOp *node);
