@@ -1,30 +1,17 @@
 #include "interpreter.h"
 #include "symbol.h"
-int main()
+#include <fstream>
+int main(int argc, char **argv)
 {
-		std::string input = 
-				" \
-				PROGRAM Part12; \
-				VAR \
-				a : INTEGER; \
-				PROCEDURE P1; \
-				VAR \
-				a : REAL; \
-				k : INTEGER; \
-				PROCEDURE P2; \
-				VAR \
-				a, z : INTEGER; \
-				BEGIN {P2} \
-				z := 777; \
-				END;  {P2} \
-				BEGIN {P1} \
-				END;  {P1} \
-				BEGIN {Part12} \
-				a := 10; \
-				END.  {Part12} \
-				";
-		//std::cout << "spi> ";
-		//getline(std::cin, input);
+		if(argc < 2){
+			fprintf(stderr, "参数太少\n");
+			return -1;
+		}
+		std::ifstream fin(argv[1]);
+		std::string input(""), s;
+		while(getline(fin, s)){
+			input += s;
+		}
 		Lexer lexer(input);
 		Parser parser(lexer);
 		AST* tree = parser.parser();

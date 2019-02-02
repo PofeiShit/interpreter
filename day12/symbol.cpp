@@ -9,7 +9,11 @@ void SymbolTableBuilder::visit(Block* node)
 
 	for(int i = 0; i < node->declarations.size(); i++){
 		for(int j  = 0; j < node->declarations[i].size(); j++){
-			visit(static_cast<VarDecl*>(node->declarations[i][j]));
+			AST* n = node->declarations[i][j];
+			if(n->token.value == "VARDECL")
+				visit(static_cast<VarDecl*>(node->declarations[i][j]));
+			else if(n->token.value == "PROCEDURE")
+				visit(static_cast<ProcedureDecl*>(node->declarations[i][j]));
 		}
 	}
 	visit(static_cast<Compound*>(node->left));
@@ -97,7 +101,7 @@ void SymbolTableBuilder::visit(Assign* node)
 	std::string var_name = var_node->token.value;
 	Symbol* var_symbol = symbol_table.lookUp(var_name);
 	if(var_symbol == NULL){
-		fprintf(stderr, "错误的标识符:%s", var_name.c_str());
+		fprintf(stderr, "assign错误的标识符:%s\n", var_name.c_str());
 	}
 
 	NodeType type = node->right->getType();
@@ -113,6 +117,6 @@ void SymbolTableBuilder::visit(Variable *node)
 	std::string var_name = node->var_name;	
 	Symbol* var_symbol = symbol_table.lookUp(var_name);
 	if(var_symbol == NULL){
-		fprintf(stderr, "错误的标识符:%s", var_name.c_str());
+		fprintf(stderr, "variable错误的标识符:%s\n", var_name.c_str());
 	}
 }
