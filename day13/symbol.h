@@ -19,8 +19,7 @@ class BuiltinTypeSymbol : public Symbol
 				this->name = _name;
 			    this->symbol_type = "None";
 			}	
-
-			std::string getName(){
+std::string getName(){
 				return name;
 			}
 			void print(){
@@ -54,27 +53,27 @@ class SymbolTable
 	public:
 			void init_builtins()
 			{
-				define(static_cast<Symbol*>(new BuiltinTypeSymbol("INTEGER")));
-				define(static_cast<Symbol*>(new BuiltinTypeSymbol("REAL")));
+				insert(static_cast<Symbol*>(new BuiltinTypeSymbol("INTEGER")));
+				insert(static_cast<Symbol*>(new BuiltinTypeSymbol("REAL")));
 			}
 			void showSymbol()
 			{
-				std::cout << "Symbols:[";
+				std::cout << "符号表中的内容:\n";
+				std::cout << "---------------\n";	
 				for(auto itr = _symbols.begin(); itr != _symbols.end(); itr++){
-				std::cout << "<" << itr->first << ':' << itr->second->symbol_type << ">," ;
+					std::cout << itr->first << ":";
+					itr->second->print();
 				}
-				std::cout << "]\n";
 			}
-			void define(Symbol* symbol){
-				std::cout << __FILE__ << __LINE__ << " define : " << symbol->name << ':' << symbol->symbol_type << std::endl;
+			void insert(Symbol* symbol){
+				std::cout << "insert: " << symbol->name << std::endl;
 				_symbols[symbol->name] = symbol;
 			}
 			Symbol* lookUp(std::string _name){
-				std::cout << __FILE__ << __LINE__ << " look up : " << _name << std::endl;
-				if(_symbols.find(_name) != _symbols.end()){
-					return _symbols[_name];
-				}
-				else 
+					std::cout << "lookup: " << _name << std::endl;
+					if(_symbols.find(_name) != _symbols.end())
+						return _symbols[_name];
+					
 					return NULL;
 			}
 };

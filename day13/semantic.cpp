@@ -1,10 +1,10 @@
-#include "symbol.h"
+#include "semantic.h"
 
-void SymbolTableBuilder::visit(Program* node)
+void SemanticAnalyzer::visit(Program* node)
 {
 	visit(static_cast<Block*>(node->left));
 }
-void SymbolTableBuilder::visit(Block* node)
+void SemanticAnalyzer::visit(Block* node)
 {
 
 	for(int i = 0; i < node->declarations.size(); i++){
@@ -14,17 +14,22 @@ void SymbolTableBuilder::visit(Block* node)
 	}
 	visit(static_cast<Compound*>(node->left));
 }
-void SymbolTableBuilder::visit(VarDecl* node)
+void SemanticAnalyzer::visit(VarDecl* node)
 {
 	AST* type_node = node->right;	
 	std::string type_name = type_node->token.value;	
 	Symbol* symbol_type = symbol_table.lookUp(type_name); 
+
 	AST* var_node = node->left;
 	std::string var_name = var_node->token.value;
+	if(symbol_table._symbols.find(var_name) != symbol_table._symbols.end()){
+		fprintf(stderr, "错误:发现重复的标识符:%s\n", var_name.c_str());
+		return ;
+	}
 	VarSymbol* var_symbol = new VarSymbol(var_name, type_name);
 	symbol_table.insert(static_cast<Symbol*>(var_symbol));
 }
-void SymbolTableBuilder::visit(Compound* node)
+void SemanticAnalyzer::visit(Compound* node)
 {
 	for(int i = 0; i < node->children.size(); i++){
 		NodeType type = node->children[i]->getType(); 
@@ -36,15 +41,15 @@ void SymbolTableBuilder::visit(Compound* node)
 			visit(static_cast<NoOperator*>(node->children[i]));
 	}
 }
-void SymbolTableBuilder::visit(NoOperator* node)
+void SemanticAnalyzer::visit(NoOperator* node)
 {
 	return ;
 }
-void SymbolTableBuilder::visit(ProcedureDecl *node)
+void SemanticAnalyzer::visit(ProcedureDecl *node)
 {
 	return ;
 }
-void SymbolTableBuilder::visit(BinOp *node)
+void SemanticAnalyzer::visit(BinOp *node)
 {
 	AST* left = node->left;
 	AST* right = node->right;
@@ -68,11 +73,11 @@ void SymbolTableBuilder::visit(BinOp *node)
 	else if(type == VARIABLE)
 		visit(static_cast<Variable*>(right));
 }
-void SymbolTableBuilder::visit(Num* node)
+void SemanticAnalyzer::visit(Num* node)
 {
 	return ;
 }
-void SymbolTableBuilder::visit(UnaryOperator* node)
+void SemanticAnalyzer::visit(UnaryOperator* node)
 {
 	AST* father = (AST*)node;
 	AST* son = father->left;
@@ -87,18 +92,12 @@ void SymbolTableBuilder::visit(UnaryOperator* node)
 		visit(static_cast<Variable*>(son));
 
 }
-void SymbolTableBuilder::visit(Type *node)
+void SemanticAnalyzer::visit(Type *node)
 {
 	return ;
 }
-void SymbolTableBuilder::visit(Assign* node)
+void SemanticAnalyzer::visit(Assign* node)
 {
-	AST* var_node = node->left;	
-	std::string var_name = var_node->token.value;
-	Symbol* var_symbol = symbol_table.lookUp(var_name);
-	if(var_symbol == NULL){
-		fprintf(stderr, "错误的标识符:%s", var_name.c_str());
-	}
 
 	NodeType type = node->right->getType();
 	if(type == BINOP)
@@ -107,12 +106,21 @@ void SymbolTableBuilder::visit(Assign* node)
 		visit(static_cast<Num*>(node->right));
 	else if(type == UNARY)
 		visit(static_cast<UnaryOperator*>(node->right));
+	else if(type == VARIABLE)
+		visit(static_cast<Variable*>(node->right));
+
+	AST* var_node = node->left;	
+	std::string var_name = var_node->token.value;
+	Symbol* var_symbol = symbol_table.lookUp(var_name);
+	if(var_symbol == NULL){
+		fprintf(stderr, "引用了不存在的标识符:%s\n", var_name.c_str());
+	}
 }
-void SymbolTableBuilder::visit(Variable *node)
+void SemanticAnalyzer::visit(Variable *node)
 {
 	std::string var_name = node->var_name;	
 	Symbol* var_symbol = symbol_table.lookUp(var_name);
 	if(var_symbol == NULL){
-		fprintf(stderr, "错误的标识符:%s", var_name.c_str());
+		fprintf(stderr, "引用了不存在的标识符:%s\n", var_name.c_str());
 	}
 }
