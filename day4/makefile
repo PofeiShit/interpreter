@@ -1,16 +1,11 @@
+cc = g++
 prom = calc4
-obj = calc4.o interpreter.o token.o lexer.o
+obj = calc4.o lexer.o interpreter.o token.o test_calc4.o
 
 $(prom): $(obj)
-	g++ -o $(prom) $(obj)
-calc4.o: calc4.cpp 
-	g++ -c calc4.cpp
-interpreter.o: interpreter.cpp
-	g++ -c interpreter.cpp
-token.o: token.cpp
-	g++ -c token.cpp
-lexer.o: lexer.cpp
-	g++ -c lexer.cpp
+	$(cc) -o $(prom) $(obj)
+%.o: %.c
+	$(cc) -c $< -o $@
 
 clean:
 	rm -rf $(obj) $(prom)
