@@ -1,14 +1,11 @@
+cc = g++
 prom = calc3
-obj = calc3.o interpreter.o token.o
+obj = calc3.o interpreter.o token.o 
 
 $(prom): $(obj)
-	g++ -o $(prom) $(obj)
-calc3.o: calc3.cpp 
-	g++ -c calc3.cpp
-interpreter.o: interpreter.cpp
-	g++ -c interpreter.cpp
-token.o: token.cpp
-	g++ -c token.cpp
+	$(cc) -o $(prom) $(obj)
+%.o: %.c
+	$(cc) -c $< -o $@
 
 clean:
 	rm -rf $(obj) $(prom)
