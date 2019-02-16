@@ -1,11 +1,11 @@
-cc = g++
-prom = calc3
-obj = calc3.o interpreter.o token.o 
+prom = calc
 
-$(prom): $(obj)
-	$(cc) -o $(prom) $(obj)
-%.o: %.c
-	$(cc) -c $< -o $@
+objs = $(patsubst %.cpp, %.o, $(wildcard *.cpp))
+
+$(prom): $(objs)
+	g++ -o $(prom) $(objs)
+%.o:%.cpp
+	g++ -c $< -o $@
 
 clean:
-	rm -rf $(obj) $(prom)
+	rm -rf $(objs) $(prom)
