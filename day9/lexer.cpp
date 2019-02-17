@@ -75,7 +75,7 @@ Token Lexer::get_next_token()
 			advance();
 			return Token(MUL, "*");	
 		}
-#if 0
+#if 1
 		if(current_char == '/'){
 			advance();
 			return Token(DIV, "/");		

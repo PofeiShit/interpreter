@@ -1,6 +1,10 @@
 #include "interpreter.h"
+#include "test_calc.h"
 int main()
 {
+#ifdef UNIT_TEST
+		test();
+#endif
 		std::string input = 
 				" \
 				BEGIN  \

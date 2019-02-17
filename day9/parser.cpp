@@ -103,9 +103,12 @@ AST* Parser::factor()
 				eat(RPAREN);
 				return ast;
 		}
-		else {
+		else if(token.type == ID){
 				AST* node = variable();
 				return node;
+		} else {
+			std::runtime_error e("no token error");
+			throw(e);
 		}
 }
 AST* Parser::term()
