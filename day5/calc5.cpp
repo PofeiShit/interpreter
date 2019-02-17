@@ -1,6 +1,5 @@
 #include "interpreter.h"
 #include "test_calc5.h"
-#define UNIT_TEST 1
 int main()
 {
 #ifdef UNIT_TEST

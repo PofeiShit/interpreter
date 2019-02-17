@@ -33,6 +33,10 @@ AST* Parser::factor()
 				eat(RPAREN);
 				return ast;
 		}
+		else {
+				std::runtime_error e("no token error\n");
+				throw std::exception(e);
+		}
 }
 AST* Parser::term()
 {
@@ -62,15 +66,17 @@ AST* Parser::expr()
 				}
 				BinOp* newNode = new BinOp(node, token, term());
 				node = (AST*)newNode;
-		}
+		} 
 		return node;
 }
 void Parser::showTree(AST* node)
 {
 		if(node != NULL){
 				node->token.show();
-				showTree(node->left);
-				showTree(node->right);
+				if(node->left != NULL)
+					showTree(node->left);
+				if(node->right != NULL)
+					showTree(node->right);
 		}	
 }
 AST* Parser::parser()
