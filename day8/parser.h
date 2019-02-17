@@ -3,6 +3,7 @@
 #include "token.h"
 #include "lexer.h"
 #include "ast.h"
+#include <stdexcept>
 class Parser 
 {
 	public:

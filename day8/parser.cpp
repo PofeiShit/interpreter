@@ -43,6 +43,9 @@ AST* Parser::factor()
 				AST* ast = expr();
 				eat(RPAREN);
 				return ast;
+		}else{
+			std::runtime_error e("no token error");
+			throw(e);
 		}
 }
 AST* Parser::term()
