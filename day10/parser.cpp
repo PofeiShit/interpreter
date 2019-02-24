@@ -231,6 +231,6 @@ AST* Parser::parser()
 		AST* node = program();
 		if(current_token.type != EOF_)
 				error();
-		showTree(node);
+		//showTree(node);
 		return node;
 }
