@@ -1,7 +1,11 @@
 #include "interpreter.h"
 #include "symbol.h"
+#include "test_calc.h"
 int main()
 {
+#ifdef UNIT_TEST
+		test();
+#endif
 	std::string input = 
 		" \
 		PROGRAM Part11; \
