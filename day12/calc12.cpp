@@ -1,12 +1,16 @@
 #include "interpreter.h"
 #include "symbol.h"
 #include <fstream>
+#include "test_calc.h"
 int main(int argc, char **argv)
 {
 		if(argc < 2){
 			fprintf(stderr, "参数太少\n");
 			return -1;
 		}
+#ifdef UNIT_TEST
+		test();
+#endif
 		std::ifstream fin(argv[1]);
 		std::string input(""), s;
 		while(getline(fin, s)){
