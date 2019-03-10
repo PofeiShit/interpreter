@@ -1,0 +1,7 @@
+target : main
+CXXFLAGS = -fpermissive -std=c++11
+main : main.cpp
+	g++ main.cpp ${CXXFLAGS} -o main
+
+clean:
+	rm main main.o
