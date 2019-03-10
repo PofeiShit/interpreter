@@ -322,20 +322,17 @@ void lexer_test(){
 			assert(token == Num);
 		}
 		printf("token Num test pass\n");
-#if 0
 		src = str[13].c_str();
 		next(); 
-		char *p = (char*)data;
+		char *p = (char*)token_val;
 		std::string s("");
 		for (int i = 0; i < 8; i++){
 			s += *p++;
 		}
 		assert(s == "a string");
-		printf("token String test pass\n");
-#endif
+		printf("token string test pass\n");
 		for (int i = 14; i < 37; i++) {
 			src = str[i].c_str();
-			printf("%s\n", src);
 			next(); 
 			assert(token == tk[i - 14]);
 		}
