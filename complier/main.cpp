@@ -248,7 +248,83 @@ void next(){
 	return ;
 }
 void expression(int level){
-	// do nothing
+	if (token == Num) {
+		match(Num);
+
+		// emit code
+		*++text = IMM;
+		*++text = token_val;
+		expr_type = INT;
+	} else if (token == '"') {
+		// emit code
+		*++text = IMM;
+		*++text = token_val;
+		match('"');
+		// store the rest strings
+		while (token == '"') {
+			match('"');
+		}
+
+		// append the end of string character '\0', all the data are default
+		// to 0, so just move data one position forward
+		data = (char *)(((int)data + sizeof(int)) & (-sizeof(int)));
+		expr_type = PTR;
+	} else if (token == Sizeof) {
+		// sizeof is actually an unnary operator
+		// now only 'sizeof(int)', 'sizeof(char)' and 'sizeof(*...)' are
+		// supported.
+		match(Sizeof);
+		match('(');
+		expr_type = INT;
+
+		if (token == Int) {
+			match(Int);
+		} else if (token == Char) {
+			match(Char);
+			expr_type = CHAR;
+		}
+
+		while (token == Mul) {
+			match(Mul);
+			expr_type = expr_type + PTR;
+		}
+
+		match(')');
+
+		// emit code
+		*++text = IMM;
+		*++text = (expr_type == CHAR) ? sizeof(char) : sizeof(int);
+
+		expr_type = INT;
+	} else if (token == Id) {
+		// there are several type when occurs to Id
+		// but this is unit, so it can only be 
+		// 1. function call
+		// 2. Enum variable
+		// 3. global/local variable
+		match(Id);
+
+		id = current_id;
+
+		if (token == '(') {
+			// function call
+			match('(');
+
+			// pass in arguments
+			tmp = 0; // number of arguments
+			while (token != ')') {
+				expression(Assign);
+				*++text = PUSH;
+				tmp++;
+
+				if (token == ',') {
+					match(',');
+				}
+			}
+			match(')');
+	
+		}
+	}
 }
 void match(int tk) {
 	if (token == tk) {
@@ -287,6 +363,202 @@ void enum_declaration() {
 		if (token == ',') {
 			next();
 		}
+	}
+}
+int index_of_bp;
+
+void function_parameter()
+{
+	int type;
+	int params;
+	params = 0;
+	while (token != ')') {
+		// int name, ...
+		type = INT;
+		if (type == Int) {
+			match(Int);
+		} else if (type == Char) {
+			type = CHAR;
+			match(Char);
+		}
+		// pointer type
+		while (token == Mul) {
+			match(Mul);
+			type = type + PTR;
+		}
+
+		// parameter name
+		if (token != Id) {
+			printf("%d: bad parameter declaration\n", line);
+			exit(-1);
+		}
+		if (current_id[Class] == Loc) {
+			printf("%d: duplicate parameter declaration\n", line);
+			exit(-1);
+		}
+		match(Id);
+
+		// store the local variable
+		current_id[BClass] = current_id[Class]; current_id[Class] = Loc;
+		current_id[BType] = current_id[Type]; current_id[Type] = type;
+		current_id[BValue] = current_id[Value]; current_id[Value] = params++;	// index of current parameter
+
+		if (token == ',') {
+			match(',');
+		}
+	}
+
+	index_of_bp = params + 1;
+}
+void statement()
+{
+	int *a, *b;
+	if (token == If) {
+		match(If);
+		match('(');
+		expression(Assign);	// parse condition
+		match(')');
+
+		*++text = JZ;
+		b = ++text;
+
+		statement(); // parse statement
+		if (token == Else) { // parse else
+			match(Else);
+
+			// emit	code for JMP B
+			*b = (int)text + 3;
+			*++text = JMP;
+			b = ++text;
+
+			statement();
+		}
+
+		*b = (int)(text + 1); 
+	} else if (token == While) {
+		match(While);
+
+		a = text + 1;
+
+		match('(');
+		expression(Assign);
+		match(')');
+
+		*++text = JZ;
+		b = ++text;
+
+		statement();
+
+		*++text = JMP;
+		*++text = (int)a;
+		*b = (int)(text + 1);
+	} else if (token == Return) {
+		// return Expression
+		match(Return);
+
+		if (token != ';') {
+			expression(Assign);
+		}
+		match(';');
+
+		// emit code for return
+		*++text = LEV;
+	} else if (token == '{') {
+		// { <statement> ... }
+		match('{');
+		while (token != '}') {
+			statement();
+		}
+
+		match('}');
+	} else if (token == ';') {
+		// empty statement
+		match(';');
+	}
+	else {
+		// a = b; or function_call();
+		expression(Assign);
+		match(';');
+	}
+}
+void function_body()
+{
+	// type func_name (...) {...}
+	// 					 -->|	|<--
+
+	// ... {
+	// 1. local declarations
+	// 2. statements
+	// }
+	int pos_local;	// position of local variables on the stack
+	int type;
+	pos_local = index_of_bp;
+
+	// 
+	while (token == Int || token == Char) {
+		// local variable declaration, just like global ones.
+		basetype = (token == Int) ? INT : CHAR;
+		match(token);
+
+		while (token != ';') {
+			type = basetype;
+			while (token == Mul) {
+				match(Mul);
+				type = type + PTR;
+			}
+
+			if (token != Id) {
+				// invalid declaration
+				printf("%d: bad local declaration\n", line);
+				exit(-1);
+			}
+			if (current_id[Class] == Loc) {
+				// identifier exists
+				printf("%d: duplicate local declaration\n", line);
+				exit(-1);
+			}
+			match(Id);
+			
+			current_id[BClass] = current_id[Class]; current_id[Class] = Loc;
+			current_id[BType] = current_id[Type]; current_id[Type] = type;
+			current_id[BValue] = current_id[Value]; current_id[Value] = ++pos_local;	// index of current parameter
+
+			if (token == ',') {
+				match(',');
+			}
+		}
+		match(';');
+	}
+	// save the stack size for local variables
+	*++text = ENT;
+	*++text = pos_local - index_of_bp;
+
+	// statements
+	while (token != '}') {
+		statement();
+	}
+	// emit code for leaving the sub function
+	*++text = LEV;
+}
+void function_declaration()
+{
+	// type func_name (...) {...}
+	// 				| this part
+	match('(');
+	function_parameter();
+	match(')');
+	match('{');
+	function_body();
+	
+	// unwind local variable declarations for all local variables.
+	current_id = symbols;
+	while (current_id[Token]) {
+		if (current_id[Class] = Loc) {
+			current_id[Class] = current_id[BClass];
+			current_id[Type] = current_id[BType];
+			current_id[Value] = current_id[BValue];
+		}
+		current_id = current_id + IdSize;
 	}
 }
 void global_declaration()
@@ -350,7 +622,7 @@ void global_declaration()
 		if (token == '(') {
 			current_id[Class] = Fun;
 			current_id[Value] = (int)(text + 1); // the memory address of function
-			//function_declaration();
+			function_declaration();
 		} else {
 			// variable declaration 
 			current_id[Class] = Glo;	// global variable
