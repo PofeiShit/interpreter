@@ -449,6 +449,37 @@ void enum_test()
 	}
 	printf("enum test pass!\n");
 }
+void variable_test()
+{
+	std::string str[] = {"int a, b, c;", "int ****d, e, f;", "char g, h, i;", "char *****j, k, l;", "char m, n; int o;"};
+	int res[] = {1, 1, 1, 9, 1, 1, 0, 0, 0, 10, 0, 0, 0, 0, 1};
+	int hash[] = {97, 100, 103, 106, 109};
+	for (int i = 0; i < 5; i++) {
+		src = str[i].c_str();
+		program();
+		current_id = symbols;
+		int tk = -1;
+
+			while (current_id[Token]) {
+				if (current_id[Hash] == hash[i]) {
+					// found one, return
+					tk = current_id[Token];
+					break;
+				}
+				current_id = current_id + IdSize;
+			}
+
+			assert(tk == Id);
+			assert(current_id[Type] == res[i * 3 + 0]);
+			current_id = current_id + IdSize;
+			assert(tk == Id);
+			assert(current_id[Type] == res[i * 3 + 1]);
+			current_id = current_id + IdSize;
+			assert(tk == Id);
+			assert(current_id[Type] == res[i * 3 + 2]);
+	}
+	printf("variable test pass!\n");
+}
 void lexer_test(){
 		std::string str[] = {"\n", "aa", "_a", "_z", "_A", "_Z", "__", "123", "0x123", "0X123", "0xcf", "017", "'a'", "\"a string\"", "/", "==", "=", "++", "+", "--", "-", "!=", "<=", "<<", "<", ">", ">>", ">=", "|", "||", "&", "&&", "^", "%", "*", "[", "?", "~", ";", "{", "}", "(", ")", "]", ",", ":"};	
 		int res[] = {14356, 14062, 14087, 13030, 14055, 14060};
@@ -551,7 +582,8 @@ int main(int argc, char **argv)
 	next(); current_id[Token] = Char;	// handle void type
 	next(); idmain = current_id;	// keep track of main
 	//lexer_test();
-	enum_test();
+	//enum_test();
+	variable_test();
 	//program();
 	return 0;//eval();
 }
