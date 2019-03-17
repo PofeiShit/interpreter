@@ -20,14 +20,17 @@ int token_val;			// value of current token (mainly for number)
 int *current_id,		// current parsed ID
 	*symbols;			// symbol table
 int *idmain;			// the main function
+int basetype;			// the type of declaration, make it global for convenience
+int expr_type;			// the type of expression
 // instructions
 enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
 		OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, 		MOD, OPEN, READ, CLOS, PRTF, MALC, MSET, MCMP, EXIT};
 enum {
 	Num = 128, Fun, Sys, Glo, Loc, Id, Char, Else, Enum, If, Int, Return, Sizeof, While, Assign, Cond, Lor, Lan, Or, Xor, And, Eq, Ne, Lt, Gt, Le, Ge, Shl, Shr, Add, Sub, Mul, Div, Mod, Inc, Dec, Brak
 };	
-enum {CHAR, INT, PTRF};
+enum {CHAR, INT, PTR};
 enum {Token, Hash, Name, Type, Class, Value, BType, BClass, BValue, IdSize};
+
 void next(){
 	char *last_pos;
 	int hash;
@@ -53,7 +56,7 @@ void next(){
 				// look for existing identifier, linear search
 				current_id = symbols;
 				while (current_id[Token]) {
-					if (current_id[Hash] == hash && !memcpy((char*)current_id[Name], last_pos, src - last_pos)) {
+					if (current_id[Hash] == hash && !memcmp((char*)current_id[Name], last_pos, src - last_pos)) {
 						// found one, return
 						token = current_id[Token];
 						return ;
@@ -247,11 +250,123 @@ void next(){
 void expression(int level){
 	// do nothing
 }
+void match(int tk) {
+	if (token == tk) {
+		next();	
+	}
+	else {
+		printf("%d: expected token: %d(%c)\n", line, tk, tk);
+		exit(-1);
+	}
+}
+void enum_declaration() {
+	// parsse enum [id] { a = 1, b = 3, ... }
+	int i;
+	i = 0;
+	while (token != '}') {
+		if (token != Id) {
+			printf("%d: bad enum identified %d\n", line, token);
+			exit(-1);
+		}
+		next();
+		if (token == Assign) {
+			// like {a = 10}
+			next();
+			if (token != Num) {
+				printf("%d: bad enum initializer\n", line);
+				exit(-1);
+			}
+			i = token_val;
+			next();
+		}
+		//printf("%d\n", current_id[Hash]);
+		current_id[Class] = Num;
+		current_id[Type] = INT;
+		current_id[Value] = i++;
+		
+		if (token == ',') {
+			next();
+		}
+	}
+}
+void global_declaration()
+{
+	// global_declaration ::= enum_decl | variable_decl | function_decl
+	// 
+	// enum_decl ::= 'enum' [id] '{' id ['=' 'num'] {',' id ['=' 'num'] '}'
+	// 
+	// variable_decl ::= type {'*'} id { ',' {'*'} id } ';'
+	//
+	// function_decl ::= type {'*'} id '(' parameter_decl ')' '{' body_decl '}'
+	int type; // tmp, actual type for variable
+	int i;	// tmp
+	basetype = INT;
+	// parse enum, this should be treated alone.
+	if (token == Enum) {
+		// enum [id] { a = 10, b = 20, ... }
+		match(Enum);
+		if (token != '{') {
+			match(Id); // skip the [id] part
+		}
+		if (token == '{') {
+			// parse the assign part
+			match('{');
+			enum_declaration();
+			match('}');
+		}
+		match(';');
+		return ;
+	}
+	// parse type information
+	if (token == Int) {
+		match(Int);
+	}
+	else if (token == Char) {
+		match(Char);
+		basetype = CHAR;
+	}
+	// parse the comma seperated variable declaration.
+	while (token != ';' && token != '}') {
+		type = basetype;
+		// parse point type, note that there may exist 'int ******x;'
+		while (token == Mul) {
+			match(Mul);
+			type = type + PTR;
+		}
+		if (token != Id) { 
+			// invalid declaration
+			printf("%d: bad global declaration\n", line);
+			exit(-1);
+		}
+		if (current_id[Class]) {
+			// identifier exists
+			printf("%d: duplicate global declaration\n", line);
+			exit(-1);
+		}
+
+		match(Id);
+		current_id[Type] = type;
+
+		if (token == '(') {
+			current_id[Class] = Fun;
+			current_id[Value] = (int)(text + 1); // the memory address of function
+			//function_declaration();
+		} else {
+			// variable declaration 
+			current_id[Class] = Glo;	// global variable
+			current_id[Value] = (int)data;	// assign memory address
+			data = data + sizeof(int);
+		}
+		if (token == ',') {
+			match(',');
+		}
+	}
+	next();
+}
 void program(){
 	next();			// get next token
 	while(token > 0){
-		printf("token is: %c\n", token);
-		next();
+			global_declaration();
 	}
 }
 int eval() {	// do nothing yet
@@ -292,7 +407,7 @@ int eval() {	// do nothing yet
 		else if(op == OPEN) { ax = open((char *)sp[1], sp[0]);}
 		else if(op == CLOS)	{ ax = close(*sp);}
 		else if(op == READ)	{ ax = read(sp[2], (char*)sp[1], *sp);}
-		else if(op == PTRF) { tmp = sp + pc[1]; ax = printf((char*)tmp[-1], tmp[-2], tmp[-3], tmp[-4], tmp[-5], tmp[-6]);}
+		else if(op == PTR) { tmp = sp + pc[1]; ax = printf((char*)tmp[-1], tmp[-2], tmp[-3], tmp[-4], tmp[-5], tmp[-6]);}
 		else if(op == MALC)	{ ax = (int)malloc(*sp);}
 		else if(op == MSET) { ax = (int)memset((char*)sp[2], sp[1], *sp);}
 		else if(op == MCMP) { ax = memcmp((char*)sp[2], (char*)sp[1], *sp);}
@@ -302,6 +417,37 @@ int eval() {	// do nothing yet
 		}
 	}
 	return 0;
+}
+void enum_test()
+{
+	std::string str[] = {"enum test { a = 1, b, c };", "enum test { a, b, c };", "enum {a = 10, b = 20, c};", "enum {a, b, c};"};	
+	char c[] = {'a', 'b', 'c'};
+	int res[] = {1, 2, 3, 0, 1, 2, 10, 20, 21, 0, 1, 2};
+	for (int i = 0; i < 4; i++) {
+		src = str[i].c_str();
+		program();
+		current_id = symbols;
+		int tk = -1;
+
+			while (current_id[Token]) {
+				if (current_id[Hash] == 97) {
+					// found one, return
+					tk = current_id[Token];
+					break;
+				}
+				current_id = current_id + IdSize;
+			}
+
+			assert(tk == Id);
+			assert(current_id[Value] == res[i * 3 + 0]);
+			current_id = current_id + IdSize;
+			assert(tk == Id);
+			assert(current_id[Value] == res[i * 3 + 1]);
+			current_id = current_id + IdSize;
+			assert(tk == Id);
+			assert(current_id[Value] == res[i * 3 + 2]);
+	}
+	printf("enum test pass!\n");
 }
 void lexer_test(){
 		std::string str[] = {"\n", "aa", "_a", "_z", "_A", "_Z", "__", "123", "0x123", "0X123", "0xcf", "017", "'a'", "\"a string\"", "/", "==", "=", "++", "+", "--", "-", "!=", "<=", "<<", "<", ">", ">>", ">=", "|", "||", "&", "&&", "^", "%", "*", "[", "?", "~", ";", "{", "}", "(", ")", "]", ",", ":"};	
@@ -404,7 +550,8 @@ int main(int argc, char **argv)
 	}
 	next(); current_id[Token] = Char;	// handle void type
 	next(); idmain = current_id;	// keep track of main
-	lexer_test();
+	//lexer_test();
+	enum_test();
 	//program();
 	return 0;//eval();
 }
