@@ -22,6 +22,7 @@ int *current_id,		// current parsed ID
 int *idmain;			// the main function
 int basetype;			// the type of declaration, make it global for convenience
 int expr_type;			// the type of expression
+int index_of_bp;
 // instructions
 enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
 		OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, 		MOD, OPEN, READ, CLOS, PRTF, MALC, MSET, MCMP, EXIT};
@@ -239,7 +240,7 @@ void next(){
 				token = Cond;
 				return ;
 			}
-			else if (token == '~' || token == ';' || token == '{' || token == '}' || token == '(' || token == ']' || token == ',' || token == ':')
+			else if (token == '~' || token == ';' || token == '{' || token == '}' || token == '(' || token == ')' || token == ']' || token == ',' || token == ':')
 			{
 				// directly return the character as token;
 				return ;
@@ -247,7 +248,17 @@ void next(){
 	}
 	return ;
 }
+void match(int tk) {
+	if (token == tk) {
+		next();	
+	}
+	else {
+		printf("%d: expected token: %d(%c)\n", line, tk, tk);
+		exit(-1);
+	}
+}
 void expression(int level){
+	int tmp, *id;
 	if (token == Num) {
 		match(Num);
 
@@ -322,17 +333,55 @@ void expression(int level){
 				}
 			}
 			match(')');
-	
+			
+			// emit code
+			if (id[Class] == Sys) {
+				// system functions
+				*++text = id[Value];
+			}	
+			else if (id[Class] == Fun) {
+				// function call 
+				*++text = CALL;
+				*++text = id[Value];
+			}
+			else {
+				printf("%d: bad function call\n", line);
+				exit(-1);
+			}
+
+			// clean the stack for arguments
+			if (tmp > 0) {
+				*++text = ADJ;
+				*++text = tmp;
+			}
+			expr_type = id[Type];
 		}
-	}
-}
-void match(int tk) {
-	if (token == tk) {
-		next();	
-	}
-	else {
-		printf("%d: expected token: %d(%c)\n", line, tk, tk);
-		exit(-1);
+		else if (id[Class] == Num) {
+			// enum variable
+			*++text = IMM;
+			*++text = id[Value];
+			expr_type = INT;
+		}
+		else {
+			// variable
+			if (id[Class] == Loc) {
+				*++text = LEA;
+				*++text = index_of_bp - id[Value];
+			}
+			else if (id[Class] == Glo) {
+				*++text = IMM;
+				*++text = id[Value];
+			}
+			else {
+				printf("%d: undefined variable\n", line);
+				exit(-1);
+			}
+			
+			// emit code, default behaviour is to load the value of the 
+			// address which is stored in 'ax'
+			expr_type = id[Type];
+			*++text = (expr_type == Char) ? LC : LI;
+		}
 	}
 }
 void enum_declaration() {
@@ -365,7 +414,6 @@ void enum_declaration() {
 		}
 	}
 }
-int index_of_bp;
 
 void function_parameter()
 {
@@ -375,9 +423,9 @@ void function_parameter()
 	while (token != ')') {
 		// int name, ...
 		type = INT;
-		if (type == Int) {
+		if (token == Int) {
 			match(Int);
-		} else if (type == Char) {
+		} else if (token == Char) {
 			type = CHAR;
 			match(Char);
 		}
@@ -389,15 +437,14 @@ void function_parameter()
 
 		// parameter name
 		if (token != Id) {
-			printf("%d: bad parameter declaration\n", line);
+			printf("%d, %d: bad parameter declaration\n", __LINE__, line);
 			exit(-1);
 		}
 		if (current_id[Class] == Loc) {
-			printf("%d: duplicate parameter declaration\n", line);
+			printf("%d,%d: duplicate parameter declaration\n", __LINE__, line);
 			exit(-1);
 		}
 		match(Id);
-
 		// store the local variable
 		current_id[BClass] = current_id[Class]; current_id[Class] = Loc;
 		current_id[BType] = current_id[Type]; current_id[Type] = type;
@@ -535,7 +582,7 @@ void function_body()
 
 	// statements
 	while (token != '}') {
-		statement();
+		//statement();
 	}
 	// emit code for leaving the sub function
 	*++text = LEV;
@@ -752,6 +799,15 @@ void variable_test()
 	}
 	printf("variable test pass!\n");
 }
+void function_test()
+{
+	std::string str[] = {"int func_test(int a, char b, int *c, char *d) { int e, *f; char ******g, h;}"}; 
+	src = str[0].c_str();
+	printf("%s\n", src);
+	program();
+	assert(index_of_bp == 9);
+	printf("function test pass\n");	
+}
 void lexer_test(){
 		std::string str[] = {"\n", "aa", "_a", "_z", "_A", "_Z", "__", "123", "0x123", "0X123", "0xcf", "017", "'a'", "\"a string\"", "/", "==", "=", "++", "+", "--", "-", "!=", "<=", "<<", "<", ">", ">>", ">=", "|", "||", "&", "&&", "^", "%", "*", "[", "?", "~", ";", "{", "}", "(", ")", "]", ",", ":"};	
 		int res[] = {14356, 14062, 14087, 13030, 14055, 14060};
@@ -855,7 +911,8 @@ int main(int argc, char **argv)
 	next(); idmain = current_id;	// keep track of main
 	//lexer_test();
 	//enum_test();
-	variable_test();
+	//variable_test();
+	function_test();
 	//program();
 	return 0;//eval();
 }
