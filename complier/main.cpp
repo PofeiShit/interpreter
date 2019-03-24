@@ -810,7 +810,7 @@ void function_declaration()
 	// unwind local variable declarations for all local variables.
 	current_id = symbols;
 	while (current_id[Token]) {
-		if (current_id[Class] = Loc) {
+		if (current_id[Class] == Loc) {
 			current_id[Class] = current_id[BClass];
 			current_id[Type] = current_id[BType];
 			current_id[Value] = current_id[BValue];
@@ -872,8 +872,8 @@ void global_declaration()
 			printf("%d: duplicate global declaration\n", line);
 			exit(-1);
 		}
-
 		match(Id);
+		
 		current_id[Type] = type;
 
 		if (token == '(') {
@@ -900,7 +900,11 @@ void program(){
 }
 int eval() {	// do nothing yet
 	int op, *tmp;
+	cycle = 0;
 	while(1){
+		cycle++;
+		op = *pc++;
+		printf("%d\n", op);
 		if(op == IMM) 		{ax = *pc++;}
 		else if(op == LC) 	{ax = *(char *)ax;}
 		else if(op == LI)	{ax = *(int *)ax;}
@@ -1039,8 +1043,23 @@ void statement_test()
 	for(int i = 0; i < n; i++){
 		assert(old_text[1 + i] == res[i]);
 	}
-	printf("statement_test all pass\n");
-
+	printf("statement test all pass\n");
+	if (!(pc = (int *)idmain[Value])) {
+		printf("%x\n", pc);
+		printf("main() not defined!\n");
+		return -1;
+	}
+	bp = sp = stack + poolsize;
+	*--sp = EXIT;
+	*--sp = PUSH;
+	int *tmp = sp;
+	*--sp = 0;
+	*--sp = (int)tmp;
+	*--sp = (int)tmp;
+	eval();
+	bp = sp = stack + poolsize;
+	assert(*(sp - 9) == 7);
+	printf("expression test all pass\n");
 }
 void lexer_test(){
 		std::string str[] = {"\n", "aa", "_a", "_z", "_A", "_Z", "__", "123", "0x123", "0X123", "0xcf", "017", "'a'", "\"a string\"", "/", "==", "=", "++", "+", "--", "-", "!=", "<=", "<<", "<", ">", ">>", ">=", "|", "||", "&", "&&", "^", "%", "*", "[", "?", "~", ";", "{", "}", "(", ")", "]", ",", ":"};	
@@ -1143,11 +1162,17 @@ int main(int argc, char **argv)
 	}
 	next(); current_id[Token] = Char;	// handle void type
 	next(); idmain = current_id;	// keep track of main
+/*
+	if (!(pc = (int *)idmain[Value])) {
+		printf("main() not defined!\n");
+		return -1;
+	}
+	*/
 	//lexer_test();
 	//enum_test();
 	//variable_test();
 	//function_test();
-	//statement_test();
+	statement_test();
 	//program();
 	return 0;//eval();
 }
