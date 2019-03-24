@@ -549,14 +549,47 @@ void expression(int level){
 			expression(Or);
 			*addr = (int)(text + 1);
 			expr_type = INT;
-		} else if (token == Xor) {
+		} else if (token == Or) {
+			// bitwise or
+			match(Or);
+			*++text = PUSH;
+			expression(Xor);
+			*++text = OR;
+			expr_type = INT;
+		}
+		else if (token == Xor) {
 			// bitwise xor
 			match(Xor);
 			*++text = PUSH;
 			expression(And);
 			*++text = XOR;
 			expr_type = INT;
-		} else if (token == Add) {
+		} 
+		else if (token == And) {
+			// bitwise and
+			match(And);
+			*++text = PUSH;
+			expressino(Eq);
+			*++text = AND;
+			expr_type = INT;
+		}
+		else if (token == Eq) {
+			// equal == 
+			match(Eq);
+			*++text = PUSH;
+			expression(Ne);
+			*++text = EQ;
+			expr_type = INT;
+		}
+		else if (token == Ne) {
+			// not equal !=
+			match(Ne);
+			*++text = PUSH;
+			expresssion(Lt);
+			*++text = NE;
+			expr_type = INT;
+		}
+		else if (token == Add) {
 			// add
 			match(Add);
 			*++text = PUSH;
@@ -592,6 +625,132 @@ void expression(int level){
 			expression(Shl);
 			*++text = GT;
 			expr_type = INT;
+		} else if (token == Le) {
+			// less than or equal to
+			match(Le);
+			*++text = PUSH;
+			expression(Shl);
+			*++text = LE;
+			expr_type = INT;
+		}
+		else if (token == Ge) {
+			// greater than or equal to
+			match(Ge);
+			*++text = PUSH;
+			expression(Shl);
+			*++text = GE;
+			expr_type = INT;
+		}
+		else if (token == Shr) {
+			// shift right
+			match(Shr);
+			*++text = PUSH;
+			expression(Add);
+			*++text = SHR;
+			expr_type = INT;
+		}
+		else if (token == Sub) {
+			// sub
+			match(Sub);
+			*++text = PUSH;
+			expression(Mul);
+			if (tmp > PTR && tmp == expr_type) {
+				// pointer subtraction
+				*++text = SUB;
+				*++text = PUSH;
+				*++text = IMM;
+				*++text = sizeof(int);
+				*++text = DIV;
+				expr_type = INT;
+			} else if (tmp > PTR) {
+				// pointer movement
+				*++text = PUSH;
+				*++text = IMM;
+				*++text = sizeof(int);
+				*++text = MUL;
+				*++text = SUB;
+				expr_type = tmp;
+			} else {
+				// numeral subtraction
+				*++text = SUB;
+				expr_type = tmp;
+			}
+		}
+		else if (token == Mul) {
+			// multiply
+			match(Mul);
+			*++text = PUSH;
+			expression(Inc);
+			*++text = MUL;
+			expr_type = tmp;
+		}
+		else if (token == Div) {
+			// divide 
+			match(Div);
+			*++text = PUSH;
+			expression(Inc);
+			*++text = DIV;
+			expr_type = tmp;
+		}
+		else if (token == Mod) {
+			// Modulo
+			match(Mod);
+			*++text = PUSH;
+			expression(Inc);
+			*++text = MOD;
+			expr_type = tmp;
+		}
+		else if (token == Inc || token == Dec) {
+			// postfix inc(++) and dec(--)
+			// we will increase the value to the variable and decrease it
+			// on ax to get its original value
+			if (*text == LI) {
+				*text = PUSH;
+				*++text = LI;
+			}
+			else if (*text == LC) {
+				*text = PUSH;
+				*++text = LC;
+			}
+			else {
+				printf("%d: bad value in increment\n");
+				exit(-1);
+			}
+			 *++text = PUSH;
+			 *++text = IMM;
+			 *++text = (expr_type > PTR) ? sizeof(int) : sizeof(char);
+			 *++text = (token == Inc) ? ADD : SUB;
+			 *++text = PUSH;
+			 *++text = IMM;
+			 *++text = (expr_type > PTR) ? sizeof(int) : sizeof(char);
+			 *++text = (token == Inc) ? SUB : ADD;
+			 match(token);
+		} 
+		else if (token == Brak) {
+			// array acces var[xx]
+			match(Brak);
+			*++text = PUSH;
+			expression(Assign);
+			match(']');
+
+			if (tmp > PTR) {
+				// pointer, not char *
+				*++text = PUSH;
+				*++text = IMM;
+				*++text = sizeof(int);
+				*++text = MUL;
+			}
+			else if (tmp < PTR) {
+				printf("%d: pointer type expected\n", line);
+				exit(-1);
+			}
+			expr_type = tmp - PTR;
+			*++text = ADD;
+			*++text = (expr_type == CHAR) ? LC : LI;
+		}
+		else {
+			printf("%d: complier error, token = %d\n", line, token);
+			exit(-1);
 		}
 	}
 }
