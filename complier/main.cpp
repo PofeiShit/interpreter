@@ -26,6 +26,7 @@ int index_of_bp;
 // instructions
 enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
 		OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, 		MOD, OPEN, READ, CLOS, PRTF, MALC, MSET, MCMP, EXIT};
+// ascii 总共127个
 enum {
 	Num = 128, Fun, Sys, Glo, Loc, Id, Char, Else, Enum, If, Int, Return, Sizeof, While, Assign, Cond, Lor, Lan, Or, Xor, And, Eq, Ne, Lt, Gt, Le, Ge, Shl, Shr, Add, Sub, Mul, Div, Mod, Inc, Dec, Brak
 };	
@@ -258,7 +259,7 @@ void match(int tk) {
 	}
 }
 void expression(int level){
-	int tmp, *id;
+	int tmp, *id, *addr;
 	if (token == Num) {
 		match(Num);
 
@@ -266,6 +267,7 @@ void expression(int level){
 		*++text = IMM;
 		*++text = token_val;
 		expr_type = INT;
+
 	} else if (token == '"') {
 		// emit code
 		*++text = IMM;
@@ -280,6 +282,7 @@ void expression(int level){
 		// to 0, so just move data one position forward
 		data = (char *)(((int)data + sizeof(int)) & (-sizeof(int)));
 		expr_type = PTR;
+
 	} else if (token == Sizeof) {
 		// sizeof is actually an unnary operator
 		// now only 'sizeof(int)', 'sizeof(char)' and 'sizeof(*...)' are
@@ -365,7 +368,7 @@ void expression(int level){
 		else {
 			// variable
 			if (id[Class] == Loc) {
-				*++text = LEA;
+				*++text = LEA; 
 				*++text = index_of_bp - id[Value];
 			}
 			else if (id[Class] == Glo) {
@@ -381,6 +384,214 @@ void expression(int level){
 			// address which is stored in 'ax'
 			expr_type = id[Type];
 			*++text = (expr_type == Char) ? LC : LI;
+		}
+	} else if (token == '(') {
+		// cast of parenthesis
+		match('(');
+		if (token == Int || token == Char) {
+			tmp = (token == Char) ? CHAR : INT;	// cast type
+			match(token);
+			while (token == Mul) {
+				match(Mul);
+				tmp = tmp + PTR;
+			}
+			match(')');
+			expression(Inc); // cast has precedence as Inc(++)
+
+			expr_type = tmp;
+		} else {
+			// normal parenthesis
+			expression(Assign);
+			match(')');
+		}
+	} else if (token == Mul) {
+		// deference *<addr>
+		match(Mul);
+		expression(Inc); // deference has the same precedence as Inc(++)
+
+		if (expr_type >= PTR) {
+			expr_type = expr_type - PTR;
+		} else {
+			printf("%d: bad deference\n", line);
+			exit(-1);
+		}
+		*++text = (expr_type == CHAR) ? LC : LI;
+	} else if (token == And) {
+		// get the address of
+		match(And);
+		expression(Inc); // get the address of
+		if (*text == LC || *text == LI) {
+			text--;
+		} else {
+			printf("%d: bad address of\n", line);
+			exit(-1);
+		}
+		expr_type = expr_type + PTR;
+	} else if (token == '!') {
+		// not 
+		match('!');
+		expression(Inc);
+
+		// emit code use <expr> == 0
+		*++text = PUSH;
+		*++text = IMM;
+		*++text = 0;
+		*++text = EQ;
+
+		expr_type = INT;
+	} else if (token == '~') {
+		// bitwise not
+		match('~');
+		expression(Inc);
+
+		// emit code, use <expr> XOR -1
+		*++text = PUSH;
+		*++text = IMM;
+		*++text = -1;
+		*++text = XOR;
+
+		expr_type = INT;
+	} else if (token == Add) {
+		// +var, do nothing
+		match(Add);
+		expression(Inc);
+		
+		expr_type = INT;
+	} else if (token == Sub) {
+		// -var
+		match(Sub);
+
+		if (token == Num) {
+			*++text = IMM;
+			*++text = -token_val;
+			match(Num);
+		} else {
+			*++text = IMM;
+			*++text = -1;
+			*++text = PUSH;
+			expression(Inc);
+			*++text = Mul;
+		}
+
+		expr_type = INT;
+	} else if (token == Inc || token == Dec) {
+		tmp = token;
+		match(token);
+		expression(Inc);
+		//
+		if (*text == LC) {
+			*text = PUSH; // to duplicate the address
+			*++text = LC;
+		} else if (*text == LI) {
+			*text = PUSH;
+			*++text = LI;
+		} else {
+			printf("%d: bad lvalue of pre-increment\n", line);
+			exit(-1);
+		}
+		*++text = PUSH;
+		*++text = IMM;
+
+		*++text = (expr_type > PTR) ? sizeof(int) : sizeof(char);
+		*++text = (tmp == Inc) ? ADD : SUB;
+		*++text = (expr_type == CHAR) ? SC : SI;
+
+	} else {
+		printf("%d: bad expression\n", line);
+		exit(-1);
+	}
+	while (token >= level) {
+		// parse token for binary operator and postfix operator
+		tmp = expr_type;
+		if (token == Assign) {
+			// var = expr;
+			match(Assign);
+			if (*text == LC || *text == LI) {
+				*text = PUSH; // save the lvalue's pointer
+			} else {
+				printf("%d: bad lvalue in assignment\n", line);
+				exit(-1);
+			}
+			expression(Assign);
+
+			expr_type = tmp;
+			*++text = (expr_type == CHAR) ? SC : SI;
+		} else if (token == Cond) {
+			// expr ?  a : b
+			match(Cond);
+			*++text = JZ;
+			addr = ++text;
+			expression(Assign);
+			if (token == ':') {
+				match(':');
+			} else {
+				printf("%d: missing colon in conditional\n", line);
+				exit(-1);
+			}
+			*addr = (int)(text + 3);
+			*++text = JMP;
+			addr = ++text;
+			expression(Cond);
+			*addr = (int)(text + 1);
+		} else if (token == Lor) {
+			// logic or
+			match(Lor);
+			*++text = JNZ;
+			addr = ++text;
+			expression(Lan);
+			*addr = (int)(text + 1);
+			expr_type = INT;
+		} else if (token == Lan) {
+			// logic and
+			match(Lan);
+			*++text = JZ;
+			addr = ++text;
+			expression(Or);
+			*addr = (int)(text + 1);
+			expr_type = INT;
+		} else if (token == Xor) {
+			// bitwise xor
+			match(Xor);
+			*++text = PUSH;
+			expression(And);
+			*++text = XOR;
+			expr_type = INT;
+		} else if (token == Add) {
+			// add
+			match(Add);
+			*++text = PUSH;
+			expression(Mul);
+
+			expr_type = tmp;
+			if (expr_type > PTR) {
+				// pointer type, and not 'char *'
+				*++text = PUSH;
+				*++text = IMM;
+				*++text = sizeof(int);
+				*++text = MUL;
+			}
+			*++text = ADD;
+		} else if (token == Lt) {
+			// less than
+			match(Lt);
+			*++text = PUSH;
+			expression(Shl);
+			*++text = Lt;
+			expr_type = INT;
+		} else if (token == Shl) {
+			// shift left 
+			match(Shl);
+			*++text = PUSH;	
+			expression(Add);
+			*++text = SHL;
+			expr_type = INT;
+		} else if (token == Gt) {
+			// greater than
+			match(Gt);
+			*++text = PUSH;
+			expression(Shl);
+			*++text = GT;
+			expr_type = INT;
 		}
 	}
 }
@@ -540,7 +751,6 @@ void function_body()
 	int pos_local;	// position of local variables on the stack
 	int type;
 	pos_local = index_of_bp;
-
 	// 
 	while (token == Int || token == Char) {
 		// local variable declaration, just like global ones.
@@ -582,7 +792,7 @@ void function_body()
 
 	// statements
 	while (token != '}') {
-		//statement();
+		statement();
 	}
 	// emit code for leaving the sub function
 	*++text = LEV;
@@ -803,10 +1013,34 @@ void function_test()
 {
 	std::string str[] = {"int func_test(int a, char b, int *c, char *d) { int e, *f; char ******g, h;}"}; 
 	src = str[0].c_str();
+	program();
+
+	assert(index_of_bp == 5);
+	printf("function test pass\n");	
+}
+void statement_test()
+{
+	std::string str[] = {" \
+			int main()\n \
+			{ \n \
+				int a, b, c;\n \
+				a = 3; \n \
+				b = 4; \n \
+				c = a + b;\n \
+				return 0;\n \
+			}\n" \	
+		};
+	// instruction : ENT 3 LEA -1 PUSH IMM 3 SI LEA -2 PUSH IMM 4 SI LEA -3 PUSH LEA -1 LI PUSH LEA -2 LI ADD SI IMM 0 LEV LEV
+	int res[] = { 6, 3, 0, -1, 13, 1, 3, 11, 0, -2, 13, 1, 4, 11, 0, -3, 13, 0, -1, 9, 13, 0, -2, 9, 25, 11, 1, 0, 8, 8 };
+	src = str[0].c_str();
 	printf("%s\n", src);
 	program();
-	assert(index_of_bp == 9);
-	printf("function test pass\n");	
+	int n = sizeof(res) / sizeof(res[0]);	
+	for(int i = 0; i < n; i++){
+		assert(old_text[1 + i] == res[i]);
+	}
+	printf("statement_test all pass\n");
+
 }
 void lexer_test(){
 		std::string str[] = {"\n", "aa", "_a", "_z", "_A", "_Z", "__", "123", "0x123", "0X123", "0xcf", "017", "'a'", "\"a string\"", "/", "==", "=", "++", "+", "--", "-", "!=", "<=", "<<", "<", ">", ">>", ">=", "|", "||", "&", "&&", "^", "%", "*", "[", "?", "~", ";", "{", "}", "(", ")", "]", ",", ":"};	
@@ -891,7 +1125,7 @@ int main(int argc, char **argv)
 
 	bp = sp = stack + poolsize;
 	ax = 0;
-	src = "char else enum if int return sizeof while"
+	src = "char else enum if int return sizeof while "
 			"open read close printf malloc memset memcmp exit void main";
 	// add keywords to symbol table
 	i = Char;
@@ -903,16 +1137,17 @@ int main(int argc, char **argv)
 	i = OPEN;
 	while (i <= EXIT) {
 		next();
-		current_id[Class] = Sys;
-		current_id[Type] = INT;
-		current_id[Value] = i++;
+		current_id[Class] = Sys; // 该标识符的类别
+		current_id[Type] = INT; // 标识符的类型,如果是变量，是int型、char型还是指针型
+		current_id[Value] = i++; // 标识符的值，如标识符是函数，则存放函数的地址
 	}
 	next(); current_id[Token] = Char;	// handle void type
 	next(); idmain = current_id;	// keep track of main
 	//lexer_test();
 	//enum_test();
 	//variable_test();
-	function_test();
+	//function_test();
+	//statement_test();
 	//program();
 	return 0;//eval();
 }
