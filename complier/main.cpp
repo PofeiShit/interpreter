@@ -280,7 +280,7 @@ void expression(int level){
 
 		// append the end of string character '\0', all the data are default
 		// to 0, so just move data one position forward
-		data = (char *)(((int)data + sizeof(int)) & (-sizeof(int)));
+		data = (char *)(((int)data + sizeof(int)) & (-sizeof(int))); // 字节对齐
 		expr_type = PTR;
 
 	} else if (token == Sizeof) {
@@ -504,7 +504,7 @@ void expression(int level){
 		// parse token for binary operator and postfix operator
 		tmp = expr_type;
 		if (token == Assign) {
-			// var = expr;
+			// var = expr; 
 			match(Assign);
 			if (*text == LC || *text == LI) {
 				*text = PUSH; // save the lvalue's pointer
@@ -569,7 +569,7 @@ void expression(int level){
 			// bitwise and
 			match(And);
 			*++text = PUSH;
-			expressino(Eq);
+			expression(Eq);
 			*++text = AND;
 			expr_type = INT;
 		}
@@ -585,7 +585,7 @@ void expression(int level){
 			// not equal !=
 			match(Ne);
 			*++text = PUSH;
-			expresssion(Lt);
+			expression(Lt);
 			*++text = NE;
 			expr_type = INT;
 		}
@@ -1181,6 +1181,87 @@ void function_test()
 	assert(index_of_bp == 5);
 	printf("function test pass\n");	
 }
+void expression_test()
+{
+	std::string str[] = {"\
+		enum Test { \n \
+			Test1 = 0,\n \
+			Test2, \n \
+			Test3, \n \
+		}; \n \
+		int Test4; \n \
+		int Test5(int a, int b) \n\
+		{ \n\
+			int c; \n\
+			c = a + b; \n\
+			return c; \n\
+		} \n\
+		int main() \n\
+		{\n \
+			int a, *d, *e; \n\
+			char *b, c; \n\
+			b = \"first line second line\"; \n\
+			b = \"another way\" \n\
+				\"first line\" \n\
+				\"seconde line\"; \n\
+			a = sizeof(int); \n\
+			a = Test5(6, Test4); \n\
+			c = (char)a; \n\
+			c = b[0]; \n\
+			b = &c; \n\
+			a = !a; \n\
+			a = ~a; \n\
+			a = -a; \n\
+			a = +a; \n\
+			++a; \n\
+			a++; \n\
+			--a; \n\
+			a--; \n\
+			a = 2; \n\
+			a = c > 'a' ? 0 : 1; \n\
+			a = a || Test4; \n\
+			a = a && Test4;\n\
+			a = a | Test4;\n\
+			a = a ^ Test4;\n\
+			a = a & Test4;\n\
+			a = a == Test4;\n\
+			a = a != Test4;\n\
+			a = a < Test4;\n\
+			a = a > Test4;\n\
+			a = a <= Test4;\n\
+			a = a >= Test4;\n\
+			a = Test4 << 1;\n\
+			a = Test4 >> 1;\n\
+			a = Test4 + 10;	\n\
+			a = Test4 + *d; \n\
+			a = Test4 - 10;\n\
+			a = Test4 - *d;\n\
+			a = e - d;\n\
+			a = Test4 * 2;\n\
+			a = Test4 / 2;\n\
+			a = Test4 % 2;\n\
+			a = d[2]; \n\
+			if (a) { \n\
+				a = 4; \n\
+			} \n\
+			while(a < 5) { \n\
+				a = 3; \n\
+			} \n\
+		}\n" 
+	};
+	// insrtuction : 
+	int res[] = {6, 1, 0, -1, 13, 0, 3, 9, 13, 0, 2, 9, 25, 11, 0, -1, 9, 8, 8, 6, 5, 0, -4, 13, 1, (int)data + 4, 11, 0, -4, 13, 1, data + 4 + 24, 11, 0, -1, 13, 1, 4, 11, 0, -1, 13, 1, 6, 13, 1, (int)data, 9, 13, 3, (int)(old_text + 1), 7, 2};
+	src = str[0].c_str();
+	printf("%s\n", src);
+	program();
+	int n = sizeof(res) / sizeof(res[0]);
+	for(int i = 0; i < n; i++){
+		printf("%d__%d\n", old_text[1 + i], res[i]);
+		assert(old_text[1 + i] == res[i]);
+	}
+	printf("expression test all pass\n");
+
+}
 void statement_test()
 {
 	std::string str[] = {" \
@@ -1300,7 +1381,6 @@ int main(int argc, char **argv)
 	memset(data, 0, poolsize);
 	memset(stack, 0, poolsize);
 	memset(symbols, 0, poolsize);
-
 	bp = sp = stack + poolsize;
 	ax = 0;
 	src = "char else enum if int return sizeof while "
@@ -1331,7 +1411,8 @@ int main(int argc, char **argv)
 	//enum_test();
 	//variable_test();
 	//function_test();
-	statement_test();
+	//statement_test();
+	expression_test();
 	//program();
 	return 0;//eval();
 }
