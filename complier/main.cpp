@@ -262,7 +262,6 @@ void expression(int level){
 	int tmp, *id, *addr;
 	if (token == Num) {
 		match(Num);
-
 		// emit code
 		*++text = IMM;
 		*++text = token_val;
@@ -383,7 +382,7 @@ void expression(int level){
 			// emit code, default behaviour is to load the value of the 
 			// address which is stored in 'ax'
 			expr_type = id[Type];
-			*++text = (expr_type == Char) ? LC : LI;
+			*++text = (expr_type == CHAR) ? LC : LI;
 		}
 	} else if (token == '(') {
 		// cast of parenthesis
@@ -470,7 +469,7 @@ void expression(int level){
 			*++text = -1;
 			*++text = PUSH;
 			expression(Inc);
-			*++text = Mul;
+			*++text = MUL;
 		}
 
 		expr_type = INT;
@@ -609,7 +608,7 @@ void expression(int level){
 			match(Lt);
 			*++text = PUSH;
 			expression(Shl);
-			*++text = Lt;
+			*++text = LT;
 			expr_type = INT;
 		} else if (token == Shl) {
 			// shift left 
@@ -934,7 +933,6 @@ void function_body()
 				exit(-1);
 			}
 			match(Id);
-			
 			current_id[BClass] = current_id[Class]; current_id[Class] = Loc;
 			current_id[BType] = current_id[Type]; current_id[Type] = type;
 			current_id[BValue] = current_id[Value]; current_id[Value] = ++pos_local;	// index of current parameter
@@ -1213,12 +1211,12 @@ void expression_test()
 			a = ~a; \n\
 			a = -a; \n\
 			a = +a; \n\
+			a = 2; \n\
 			++a; \n\
 			a++; \n\
 			--a; \n\
 			a--; \n\
-			a = 2; \n\
-			a = c > 'a' ? 0 : 1; \n\
+			a = c > 'a' ? 9 : 10; \n\
 			a = a || Test4; \n\
 			a = a && Test4;\n\
 			a = a | Test4;\n\
@@ -1240,7 +1238,6 @@ void expression_test()
 			a = Test4 * 2;\n\
 			a = Test4 / 2;\n\
 			a = Test4 % 2;\n\
-			a = d[2]; \n\
 			if (a) { \n\
 				a = 4; \n\
 			} \n\
@@ -1256,7 +1253,30 @@ void expression_test()
 			0, -5, 13, 0, -1, 9, 12, 0, -5, 13, 0, -4, 9, 13, 1, 0, 25, 10, 12, 0, -4, 13, 0, -5, 11, 
 			0, -1, 13, 0, -1, 9, 13, 1, 0, 17, 11, /* a != a */
 			0, -1, 13, 0, -1, 9, 13, 1, -1, 15, 11, /* a ~= a */
-			0, -1, 13,  };
+			0, -1, 13, 1, -1, 13, 0, -1, 9, 27, 11, /* a = -a */
+			0, -1, 13, 0, -1, 9, 11, /* a = +a */
+			0, -1, 13, 1, 2, 11, /* a = 2 */
+			0, -1, 13, 9, 13, 1, 1, 25, 11, /* ++a */
+			0, -1, 13, 9, 13, 1, 1, 25, 13, 1, 1, 26, /* a++ */ 
+			0, -1, 13, 9, 13, 1, 1, 26, 11, /* --a */
+			0, -1, 13, 9, 13, 1, 1, 26, 13, 1, 1, 25, /* a-- */
+			0, -1, 13, 0, -5, 10, 13, 1, 97, 20, 4, 0x7fffffff, 1, 9, 2, 0x7fffffff, 1, 10, 11, /* a = c > 'a' ? 9 : 10 */
+			0, -1, 13, 0, -1, 9, 5, 0x7fffffff, 1, (int)data, 9, 11, /* a = a || Test4 */ 
+			0, -1, 13, 0, -1, 9, 4, 0x7fffffff, 1, (int)data, 9, 11, /* a = a && Test4 */
+			0, -1, 13, 0, -1, 9, 13, 1, (int)data, 9, 14, 11, /* a = a | Test4 */
+			0, -1, 13, 0, -1, 9, 13, 1, (int)data, 9, 15, 11, /* a = a ^ Test4 */
+			0, -1, 13, 0, -1, 9, 13, 1, (int)data, 9, 16, 11, /* a = a & Test4 */
+			0, -1, 13, 0, -1, 9, 13, 1, (int)data, 9, 17, 11, /* a = a == Test4 */
+			0, -1, 13, 0, -1, 9, 13, 1, (int)data, 9, 18, 11, /* a = a != Test4 */
+			0, -1, 13, 0, -1, 9, 13, 1, (int)data, 9, 19, 11, /* a = a < Test4 */
+			0, -1, 13, 0, -1, 9, 13, 1, (int)data, 9, 20, 11, /* a = a > Test4 */
+			0, -1, 13, 0, -1, 9, 13, 1, (int)data, 9, 21, 11, /* a = a <= Test4 */
+			0, -1, 13, 0, -1, 9, 13, 1, (int)data, 9, 22, 11, /* a = a >= Test4 */
+			0, -1, 13, 1, (int)data, 9, 13, 1, 1, 23, 11, /* a = Test4 << 1 */
+			0, -1, 13, 1, (int)data, 9, 13, 1, 1, 24, 11, /* a = Test4 >> 1 */
+			0, -1, 13, 1, (int)data, 9, 13, 1, 10, 25, 11, /* a = Test4 + 10 */
+			
+	};
 			
 	src = str[0].c_str();
 	printf("%s\n", src);
@@ -1264,7 +1284,8 @@ void expression_test()
 	int n = sizeof(res) / sizeof(res[0]);
 	for(int i = 0; i < n; i++){
 		printf("%d__%d\n", old_text[1 + i], res[i]);
-		assert(old_text[1 + i] == res[i]);
+		if(res[i] != 0x7fffffff) // 要跳转的地址用0x7fffffff代替
+			assert(old_text[1 + i] == res[i]);
 	}
 	printf("expression test all pass\n");
 
