@@ -1,4 +1,13 @@
 #include "lexer.h"
+static inline bool IsDigit(char ch)
+{
+	return '0' <= ch && ch <= '9';
+}
+static inline bool IsLetter(char ch)
+{
+	return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || '_' == ch;
+}
+
 /*
  * /f : 换页
  * /v : 垂直制表
@@ -163,6 +172,87 @@ void Tokenize()
 					tokTag = Token::XOR;
 				}
 				++p; break;
+		case '.':
+				if ('.' == p[1]) {
+					if ('.' == p[2]) {
+						tokTag = Token::ELLIPSIS; ++p; ++p;	
+					} else {
+						// TO DO: error
+						Error(_fileName, _line, _column, "illegal identifier '%s'", "..");
+					}
+				} else if (IsDigit(p[1])) { // for float constant like: '.123'
+					goto constant_handler;
+				} else {
+					tokTag = Token::DOT;
+				}
+				++p; break;
+		// ????
+		case 'u': case 'U': case 'L':
+				// character constant
+				if ('\' == p[1]) {
+					_tokBegin = p; ++p;
+					goto char_handler;
+				} else if ('"' == p[1]) {
+					_tokBegin = p; ++p;
+					goto string_handler;
+				} else if ('u' == p[0] && '8' == p[1] && '"' == p[2]) {
+					_tokBegin = p; ++p; ++p;
+					goto string_handler;
+				} else {
+					goto letter_handler;
+				}
+				++p; break;
+		case '#':
+				if ('#' == p[1]) {
+					tokTag = Token::DSHARP; ++p;
+				} else {
+					tokTag = '#';
+				}
+				++p; break;
+		case ':':
+				if ('>' == p[1]) {
+					tokTag = ']'; ++p;
+				} else {
+					tokTag = ':';
+				}
+				++p; break;
+		case '(': case ')': case '[': case ']': case '?':
+		case ',': case '{': case '}': case '~': case ';':
+				tokTag = p[0]; ++p; break;
+		case '\':
+				_tokBegin = p;
+		char_handler:
+				for (++p; '\'' != p[0] && 0 != p[0]; p++) {
+					if ('\\' == p[0]) 
+						++p;
+				}
+				_tokEnd = p + 1;
+				tokTag = Token::CONSTANT;
+				_tokBuf.push_back(NewToken(tokTag, _tokBegin, _tokEnd));
+				++p; continue;
+		case '"':
+				_tokBegin = p;
+		string_handler:
+				for (++p; '"' != p[0] && 0 != p[0]; p++) {
+					if ('\\' == p[0]) 
+						++p;
+				}
+				_tokEnd = p + 1;
+				tokTag = Token::STRING_LITERAL;
+				_tokBuf.push_back(NewToken(tokTag, _tokBegin, _tokEnd));
+				++p; continue;
+		default:
+			letter_handler:
+				if (IsLetter(p[0])) {
+					_tokBegin = p;
+					while (IsLetter(p[0]) || IsDigit(p[0])) {
+						++p;
+					}
+					_tokEnd = p;
+
+					
+				}
+
 		}
 	}
 }
