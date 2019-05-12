@@ -61,6 +61,11 @@ const unordered_map<int, const char*> Token::_TagLexemeMap = {
 
 	/* key words */
 	{ Token::AUTO, "auto"},
-		
+	
 	{ Token::THREAD_LOCAL, "_Thread_local"},
+	
+	{ Token::END, "(eof)" },
+	{ Token::IDENTIFIER, "(identifier)" },
+	{ Token::CONSTANT, "(constant)" },
+	{ Token::STRING_LITERAL, "(string literal)" },
 };

@@ -66,6 +66,7 @@ void Lexer::Tokenize()
 
 		if (0 == p[0]) {
 			_tokBuf.push_back(NewToken(Token::END));
+			printf("OK\n");
 			return ;
 		}
 

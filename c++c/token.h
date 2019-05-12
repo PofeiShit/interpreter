@@ -84,7 +84,7 @@ public:
 	{
 		size_t size = end - begin;
 		auto val = new char[size + 1];
-		memcpy(val, begin, end);
+		memcpy(val, begin, size);
 		val[size] = 0;
 		_val = val;
 	}
@@ -112,7 +112,6 @@ private:
 private:
 	Token(int tag, const char* fileName = nullptr, int line = 1, int column = 1, const char* begin = nullptr, const char* end = nullptr) : _tag(tag), _fileName(fileName), _line(line), _column(column){
 		if (nullptr == begin) {
-			printf("%d\t%d\t%d\t%d\t%d\n", tag, IsPunctuator(), IsKeyWord(),  IsEOF(), Token::ELLIPSIS);
 			assert(IsPunctuator() || IsKeyWord() || IsEOF());
 			_val = _TagLexemeMap.at(tag);
 		} else {

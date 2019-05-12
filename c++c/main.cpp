@@ -11,8 +11,9 @@ int main()
 	int n = sizeof(result) / sizeof(result[0]);
 	for(int i = 0; i < n; ++i){
 		Token* t = lexer.Get();
-//		printf("%d\t%d", result[i], t->Tag());
+		printf("%d\t%d\n", result[i], t->Tag());
 		assert(result[i] == t->Tag());
 	}
+	printf("token test pass\n");
 	return 0;
 }
