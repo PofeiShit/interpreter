@@ -1,4 +1,7 @@
 #include "error.h"
+#include "token.h"
+#include <cstdarg>
+#include <cstdio>
 static void Error(const char* fileName, int line, int column, const char* label, const char* fmt, va_list args)
 {
 	fprintf(stderr, "[ %s ]: [ %d ]: ", __FILE__, __LINE__);

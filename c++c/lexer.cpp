@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "error.h"
 static inline bool IsDigit(char ch)
 {
 	return '0' <= ch && ch <= '9';
@@ -7,7 +8,36 @@ static inline bool IsLetter(char ch)
 {
 	return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || '_' == ch;
 }
-
+static inline bool IsHex(char ch)
+{
+	return ('a' <= ch && ch <= 'f') || ('A' <= ch && ch <= 'F') ||
+			IsDigit(ch);
+}
+static void ReadConstant(const char*& p)
+{
+	bool sawEP = false, sawSign = false;
+	for (; 0 != p[0]; p++) {
+		if (IsHex(p[0])) 
+			continue;	
+		switch (p[0]) {
+			// case '0' ... '9'
+			// case 'a' ... 'f': case 'A' ... 'F'
+			case '.':
+			case 'u': case 'U': case 'l': case 'L':	
+			case 'f': case 'F': case 'x': case 'X':
+				continue;
+			case 'e': case 'E': case 'p': case 'P':
+				sawEP = true;
+				continue;
+			case '+': case '-':
+				if ( !sawEP || sawSign) 
+					return ;
+				sawSign = true;
+				continue;
+			default: return;
+		}
+	}
+}
 /*
  * /f : 换页
  * /v : 垂直制表
@@ -17,7 +47,8 @@ static inline bool IsBlank(char ch)
 {
 	return ' ' == ch || '\t' == ch || '\v' == ch || '\f' == ch;
 }
-void Tokenize()
+
+void Lexer::Tokenize()
 {
 	auto p = _text;
 	auto lineBegin = p;
@@ -69,11 +100,10 @@ void Tokenize()
 						}
 				} else if ('=' == p[1]) {
 					tokTag = Token::LE_OP; ++p;
-				/*} else if (':' == p[1]) {
+				} else if (':' == p[1]) {
 					tokTag = '['; ++p;
 				} else if ('%' == p[1]) {
 					tokTag = '{'; ++p;
-					*/
 				} else {
 					tokTag = Token::LESS;
 				}
@@ -129,6 +159,7 @@ void Tokenize()
 				} else {
 					tokTag = Token::MUL;
 				}
+				++p; break;
 		case '/':
 				if ('/' == p[1]) {
 					while('\n' != p[0])	
@@ -189,7 +220,7 @@ void Tokenize()
 		// ????
 		case 'u': case 'U': case 'L':
 				// character constant
-				if ('\' == p[1]) {
+				if ('\'' == p[1]) {
 					_tokBegin = p; ++p;
 					goto char_handler;
 				} else if ('"' == p[1]) {
@@ -219,7 +250,7 @@ void Tokenize()
 		case '(': case ')': case '[': case ']': case '?':
 		case ',': case '{': case '}': case '~': case ';':
 				tokTag = p[0]; ++p; break;
-		case '\':
+		case '\'':
 				_tokBegin = p;
 		char_handler:
 				for (++p; '\'' != p[0] && 0 != p[0]; p++) {
@@ -250,10 +281,29 @@ void Tokenize()
 					}
 					_tokEnd = p;
 
-					
+					tokTag = Token::KeyWordTag(_tokBegin, _tokEnd);
+					if (!Token::IsKeyWord(tokTag)){
+						tokTag = Token::IDENTIFIER;
+						_tokBuf.push_back(NewToken(tokTag, _tokBegin, _tokEnd));
+					} else 
+						_tokBuf.push_back(NewToken(tokTag));
+					continue;
+				} else if (IsDigit(p[0])) {
+				constant_handler:
+					_tokBegin = p;
+					ReadConstant(p);
+					_tokEnd = p;
+					tokTag = Token::CONSTANT;
+					_tokBuf.push_back(NewToken(tokTag, _tokBegin, _tokEnd));
+					continue;
+				} else {
+					//TODO: set error: invalid character.
+					tokTag = Token::INVALID;
+					Error(_fileName, _line, _column, "invalid character '%c'", p[0]);
 				}
-
+				++p; break;
 		}
+		_tokBuf.push_back(NewToken(tokTag));
 	}
 }
 bool Lexer::ReadFile(const char* fileName)
@@ -273,7 +323,7 @@ bool Lexer::ReadFile(const char* fileName)
 		return false;
 	}
 	// 在获取token的过程中需要最多向前看的歩数
-	static const int max_predict = 1;
+	static const int max_predict = 4;
 	auto text = new char[fileSize + 1 + max_predict];
 	fileSize = fread((void*)text, sizeof(char), fileSize, fp);
 	memset(&text[fileSize], 0, 1 + max_predict);
