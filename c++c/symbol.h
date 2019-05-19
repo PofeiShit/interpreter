@@ -5,17 +5,26 @@
 
 /********** Type System ************/
 class Type;
-
+class Variable;
+class ArithmType;
+class ArrayType;
+class FuncType;
+class PointerType;
+class SructionUnionType;
+class UnionType;
+class EnumType;
 
 class Type
 {
 public:
+	static const int _machineWord = 4;
 	virtual ~Type(void) {}
 };
 
 class ArithmType : public Type
 {
 public:
+	
 	enum {
 		TBOOL = 0, TCHAR, TUCHAR,
 		TSHORT, TUSHORT, TINT, TUINT,

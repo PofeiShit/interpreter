@@ -98,8 +98,30 @@ public:
 	bool IsPunctuator(void) const {
 		return LPAR <= _tag && _tag <= ELLIPSIS;
 	}
+	bool IsIdentifier(void) const {
+		return IDENTIFIER == _tag;
+	}
 	bool IsEOF(void) const {
 		return _tag == Token::END;
+	}
+	bool IsTypeQual(void) const {
+		switch (_tag) {
+		case CONST: case RESTRICT:
+		case VOLATILE: case ATOMIC:
+			return true;
+		default: return false;
+		}
+	}
+	bool IsTypeSpec(void) const {
+		switch (_tag) {
+		case VOID: case CHAR: case SHORT:
+		case INT: case LONG: case FLOAT:
+		case DOUBLE: case SINGED: case UNSIGNED:
+		case BOOL: case COMPLEX: case IMAGINARY:
+		case STRUCT: case UNION: case ENUM: case ATOMIC:
+			return true;
+		default: return false;
+		}
 	}
 private:
 	int _tag;
