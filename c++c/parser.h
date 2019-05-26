@@ -22,14 +22,14 @@ public:
 
 	Expr* ParsePostfixExpr(void);
 	Expr* ParsePostfixExprTail(Expr* primExpr);
-    SubSrciptingOp* ParseSubScripting(Expr* pointer);
-	MemberRefOp* ParseMemberRef(int tag, Expr* lhs);
+    Expr* ParseSubScripting(Expr* pointer);
+	Expr* ParseMemberRef(int tag, Expr* lhs);
 	UnaryOp* ParsePostfixIncDec(int tag, Expr* expr);
 	FuncCall* ParseFuncCall(Expr* caller);
 	
 	Expr* ParseUnaryExpr(void);
-	Constant* ParseSizeofOperand(void);
-	Constant* ParseAlignofOperand(void);
+	Constant* ParseSizeof(void);
+	Constant* ParseAlignof(void);
 	UnaryOp* ParsePrefixIncDec(int tag);
 	UnaryOp* ParseAddrOperand(void);
 
@@ -46,7 +46,9 @@ public:
 	Expr* ParseLogicalAndExpr(void);
 	Expr* ParseLogicalOrExpr(void);
 	Expr* ParseConditionalExpr(void);
+
 	Expr* ParseCommaExpr(void);
+
 	Expr* ParseAssignExpr(void);
 private:
 	// 如果当前token符合参数，返回true,并consume一个token
