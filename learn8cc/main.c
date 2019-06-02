@@ -13,10 +13,18 @@ enum {
   AST_VAR,
   AST_STR,
   AST_FUNCALL,
+  AST_DECL,
+};
+enum {
+	CTYPE_VOID,
+	CTYPE_INT,
+	CTYPE_CHAR,
+	CTYPE_STR,
 };
 
 typedef struct Ast {
   char type;
+  char ctype;
   union {
 	// Integer
     int ival;
@@ -45,16 +53,21 @@ typedef struct Ast {
       int nargs;
       struct Ast **args;
     };
+	// Declaration
+	struct {
+		struct Ast *decl_var;
+		struct Ast *decl_init;
+	};
   };
 } Ast;
 
-Ast *vars = NULL;
-Ast *strings = NULL;
-char *REGS[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static Ast *vars = NULL;
+static Ast *strings = NULL;
+static char *REGS[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
-void emit_expr(Ast *ast);
-Ast *read_expr2(int prec);
-Ast *read_expr(void);
+static void emit_expr(Ast *ast);
+static Ast *read_expr2(int prec);
+static Ast *read_expr(void);
 
 void error(char *fmt, ...) {
   va_list args;
@@ -65,7 +78,7 @@ void error(char *fmt, ...) {
   exit(1);
 }
 
-Ast *make_ast_op(char type, Ast *left, Ast *right) {
+static Ast *make_ast_op(char type, Ast *left, Ast *right) {
   Ast *r = malloc(sizeof(Ast));
   r->type = type;
   r->left = left;
@@ -73,21 +86,22 @@ Ast *make_ast_op(char type, Ast *left, Ast *right) {
   return r;
 }
 
-Ast *make_ast_int(int val) {
+static Ast *make_ast_int(int val) {
   Ast *r = malloc(sizeof(Ast));
   r->type = AST_INT;
   r->ival = val;
   return r;
 }
-Ast *make_ast_char(char c) {
+static Ast *make_ast_char(char c) {
 	Ast* r = malloc(sizeof(Ast));
 	r->type = AST_CHAR;
 	r->c = c;
 	return r;
 }
-Ast *make_ast_var(char *vname) {
+static Ast *make_ast_var(int ctype, char *vname) {
   Ast *r = malloc(sizeof(Ast));
   r->type = AST_VAR;
+  r->ctype = cytpe;
   r->vname = vname;
   r->vpos = vars ? vars->vpos + 1 : 1;
   r->vnext = vars;
@@ -95,7 +109,7 @@ Ast *make_ast_var(char *vname) {
   return r;
 }
 
-Ast *make_ast_string(char *str) {
+static Ast *make_ast_string(char *str) {
   Ast *r = malloc(sizeof(Ast));
   r->type = AST_STR;
   r->sval = str;
@@ -110,7 +124,7 @@ Ast *make_ast_string(char *str) {
   return r;
 }
 
-Ast *make_ast_funcall(char *fname, int nargs, Ast **args) {
+static Ast *make_ast_funcall(char *fname, int nargs, Ast **args) {
   Ast *r = malloc(sizeof(Ast));
   r->type = AST_FUNCALL;
   r->fname = fname;
@@ -333,13 +347,50 @@ void emit_data_section(void) {
   }
   printf("\t");
 }
-
+static int get_ctype(Token *tok) {
+	if (tok->type != TTYPE_IDENT)
+		return -1;
+	if (!strcmp(tok->sval, "int"))
+		return CTYPE_INT;
+	if (!strcmp(tok->sval, "char"))
+		return CTYPE_CHAR;
+	if (!strcmp(tok->sval, "string"))
+		return CTYPE_STR;
+	return -1;
+}
+static void expect(char punct) {
+	Token *tok = read_token();
+	if (!is_punct(tok, punct))
+		error("'%c' expected, bug got %s", punct, token_to_string(tok))
+}
+static Ast *read_decl(void) {
+	int ctype = get_ctype(read_token());
+	Token *name = read_token();
+	if (name->type != TTYPE_IDENT)
+		error("Identifier expected, but got %s", token_to_string(name));
+	Ast *var = make_ast_var(ctype, name->sval);
+	expect('=');
+	Ast *init = read_expr(0);
+	return make_ast_decl(var, init);
+}
+static bool is_type_keyword(Token *tok) {
+	return get_ctype(tok) != -1;
+}
+static Ast *read_decl_or_stmt(void) {
+	Token *tok = peek_token();
+	if (!tok) return NULL;
+	Ast *r = is_type_keywork(tok) ? read_decl() : read_expr(0);
+	tok = read_token();
+	if (!is_punct(tok, ';'))
+		error("Unterminated expression: %s", token_to_string(tok));
+	return r;
+}
 int main(int argc, char **argv) {
   int wantast = (argc > 1 && !strcmp(argv[1], "-a"));
   Ast *exprs[EXPR_LEN];
   int i;
   for (i = 0; i < EXPR_LEN; i++) {
-    Ast *t = read_expr();
+    Ast *t = read_decl_or_stmt();
     if (!t) break;
     exprs[i] = t;
   }

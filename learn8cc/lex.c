@@ -61,14 +61,14 @@ char *token_to_string(Token *tok) {
 			error("internal error: unknown type: %d", tok->type); 
 	}
 }
-void skip_space(void) {
+static int getc_nonspace (void) {
   int c;
   while ((c = getc(stdin)) != EOF) {
-    if (isspace(c))
+    if (isspace(c) || c == '\n' || c == '\r')
       continue;
-    ungetc(c, stdin);
-    return;
+	return c;
   }
+  return EOF;
 }
 
 Token *read_number(char c) {
@@ -128,8 +128,7 @@ err:
 	error("Unterminated char");
 }
 static Token *read_token_int(void) {
-	skip_space();
-	int c = getc(stdin);
+	int c = getc_nonspace();
 	switch (c) {
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
@@ -164,6 +163,11 @@ void unget_token(Token *tok) {
 	if (ungotten) 
 		error("Push back buffer is already full");
 	ungotten = tok;
+}
+Token *peek_token(void) {
+	Token *tok = read_token();
+	unget_token(tok);
+	return tok;
 }
 Token *read_token(void) {
 	if (ungotten) {
