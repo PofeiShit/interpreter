@@ -67,7 +67,7 @@ static char *REGS[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 static void emit_expr(Ast *ast);
 static Ast *read_expr2(int prec);
-static Ast *read_expr(void);
+static Ast *read_expr(int prec);
 
 void error(char *fmt, ...) {
   va_list args;
@@ -101,7 +101,7 @@ static Ast *make_ast_char(char c) {
 static Ast *make_ast_var(int ctype, char *vname) {
   Ast *r = malloc(sizeof(Ast));
   r->type = AST_VAR;
-  r->ctype = cytpe;
+  r->ctype = ctype;
   r->vname = vname;
   r->vpos = vars ? vars->vpos + 1 : 1;
   r->vnext = vars;
@@ -132,8 +132,14 @@ static Ast *make_ast_funcall(char *fname, int nargs, Ast **args) {
   r->args = args;
   return r;
 }
-
-Ast *find_var(char *name) {
+static Ast *make_ast_decl(Ast *var, Ast *init) {
+	Ast *r = malloc(sizeof(Ast));
+	r->type = AST_DECL;
+	r->decl_var = var;
+	r->decl_init = init;
+	return r;
+}
+static Ast *find_var(char *name) {
   for (Ast *p = vars; p; p = p->vnext) {
     if (!strcmp(name, p->vname))
       return p;
@@ -142,7 +148,7 @@ Ast *find_var(char *name) {
 }
 
 
-int priority(char op) {
+static int priority(char op) {
   switch (op) {
     case '=':
       return 1;
@@ -156,7 +162,7 @@ int priority(char op) {
 }
 
 
-Ast *read_func_args(char *fname) {
+static Ast *read_func_args(char *fname) {
   Ast **args = malloc(sizeof(Ast*) * (MAX_ARGS + 1));
   int i = 0, nargs = 0;
   for (; i < MAX_ARGS; i++) {
@@ -175,15 +181,17 @@ Ast *read_func_args(char *fname) {
   return make_ast_funcall(fname, nargs, args);
 }
 
-Ast *read_ident_or_func(char *name) {
+static Ast *read_ident_or_func(char *name) {
   Token *tok = read_token();
   if (is_punct(tok, '('))
     return read_func_args(name);
   unget_token(tok);
   Ast *v = find_var(name);
-  return v ? v : make_ast_var(name);
+  if (!v) 
+	  error("Undefined variable: %s", name);
+  return v;
 }
-Ast *read_prim(void) {
+static Ast *read_prim(void) {
 	Token *tok = read_token();
 	if (!tok) return NULL;
 	switch (tok->type) {
@@ -220,16 +228,33 @@ Ast *read_expr2(int prec) {
       ast = make_ast_op(tok->punct, ast, read_expr2(prec2 + 1));
   }
 }
-
-Ast *read_expr(void) {
-  Ast *r = read_expr2(0);
-  if (!r) return NULL;
-  Token *tok = read_token();
-  if (!is_punct(tok, ';'))
-	  error("Unterminated expression: %s", token_to_string(tok));
-  return r;
+static void ensure_lvalue(Ast *ast) {
+	if (ast->type != AST_VAR) 
+		error("Variable expected");
 }
-
+static Ast *read_expr(int prec) {
+  Ast *ast = read_prim();
+  if (!ast) return NULL;
+  for (;;) {
+	  Token *tok = read_token();
+	  if (tok->type != TTYPE_PUNCT) {
+		  unget_token(tok);
+		  return ast;
+	  }
+	  int prec2 = priority(tok->punct);
+	  if (prec2 < 0 || prec2 < prec) {
+		unget_token(tok);
+		return ast;
+	  }
+	  if (!is_punct(tok, '='))
+		  ensure_lvalue(ast);
+	  ast = make_ast_op(tok->punct, ast, read_expr(prec2 + 1));
+  }
+}
+static void emit_assign(Ast *var, Ast *value) {
+	emit_expr(value);
+	printf("mov %%eax, -%d(%%rbp)\n\t", var->vpos * 4);
+}
 void emit_binop(Ast *ast) {
   if (ast->type == '=') {
     emit_expr(ast->right);
@@ -288,6 +313,9 @@ void emit_expr(Ast *ast) {
       for (int i = ast->nargs - 1; i > 0; i--)
         printf("pop %%%s\n\t", REGS[i]);
       break;
+	case AST_DECL:
+	  emit_assign(ast->decl_var, ast->decl_init);
+	  return ;
     default:
       emit_binop(ast);
   }
@@ -301,7 +329,15 @@ void print_quote(char *p) {
     p++;
   }
 }
-
+static char *ctype_to_string(int ctype) {
+	switch (ctype) {
+		case CTYPE_VOID: return "void";
+		case CTYPE_INT: return "int";
+		case CTYPE_CHAR: return "char";
+		case CTYPE_STR: return "string";
+		default: error("Unkown cytpe: %d", ctype);
+	}
+}
 void print_ast(Ast *ast) {
   switch (ast->type) {
     case AST_INT:
@@ -327,6 +363,13 @@ void print_ast(Ast *ast) {
       }
       printf(")");
       break;
+	case AST_DECL:
+	  printf("(decl %s %s", 
+			  ctype_to_string(ast->decl_var->ctype),
+			  ast->decl_var->vname);
+	  print_ast(ast->decl_init);
+	  printf(")");
+	  break;
     default:
       printf("(%c ", ast->type);
       print_ast(ast->left);
@@ -361,7 +404,7 @@ static int get_ctype(Token *tok) {
 static void expect(char punct) {
 	Token *tok = read_token();
 	if (!is_punct(tok, punct))
-		error("'%c' expected, bug got %s", punct, token_to_string(tok))
+		error("'%c' expected, bug got %s", punct, token_to_string(tok));
 }
 static Ast *read_decl(void) {
 	int ctype = get_ctype(read_token());
@@ -379,7 +422,7 @@ static bool is_type_keyword(Token *tok) {
 static Ast *read_decl_or_stmt(void) {
 	Token *tok = peek_token();
 	if (!tok) return NULL;
-	Ast *r = is_type_keywork(tok) ? read_decl() : read_expr(0);
+	Ast *r = is_type_keyword(tok) ? read_decl() : read_expr(0);
 	tok = read_token();
 	if (!is_punct(tok, ';'))
 		error("Unterminated expression: %s", token_to_string(tok));
